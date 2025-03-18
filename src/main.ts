@@ -1,5 +1,4 @@
 import { NotificationManager } from "./components/Notification";
-import { api } from "./lib/API";
 import { MasterObserver } from "./manger/master-observer";
 import { URLManager } from "./manger/URLManager";
 import "./style/index.css";
@@ -53,18 +52,5 @@ function findCurrentPage() {
     return "user-library";
   } else {
     return "home";
-  }
-}
-
-async function test() {
-  const article = document.querySelector("article");
-
-  if (article) {
-    const articleID = article.id;
-    const id = articleID.split("-")[1];
-    if (!Number.isNaN(Number(id))) {
-      const novel = await api.getNovelbyChapterId(Number(id));
-      const chapterPatch = await api.getChaptersByNovelId(novel.id);
-    }
   }
 }
