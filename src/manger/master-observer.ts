@@ -392,7 +392,7 @@ export class MasterObserver {
         }),
         // Novel link
         Create.a({
-          href: this.novelData?.link,
+          href: "/series/" + this.novelData?.slug,
           textContent: this.novelData?.name,
           className: "chapter-options-link endless-link",
           attributes: {

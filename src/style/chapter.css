@@ -14,6 +14,9 @@
     font-family: inherit;
   }
 
+  #kol_navbar {
+    line-height: initial;
+  }
   .sentinel {
     width: 100%;
     height: 1px;
