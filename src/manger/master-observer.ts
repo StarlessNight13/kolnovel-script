@@ -67,7 +67,7 @@ export class MasterObserver {
     await this.loadChaptersList();
 
     // Setup chapter styling
-    this.cleanupStyleFunction = this.setupChapterStyle();
+    this.setupChapterStyle();
   }
 
   /**
@@ -423,7 +423,7 @@ export class MasterObserver {
   /**
    * Setup style synchronization between source and new elements
    */
-  private setupChapterStyle(): () => void {
+  private setupChapterStyle(): void {
     const sourceElement = document.querySelector(
       SITE_CONFIGS.selectors.content
     ) as HTMLElement;
@@ -432,14 +432,14 @@ export class MasterObserver {
       console.error(
         `Source element not found: ${SITE_CONFIGS.selectors.content}`
       );
-      return () => {};
+      return;
     }
 
     const targetElement = document.querySelector(".epwrapper") as HTMLElement;
 
     if (!targetElement) {
       console.error(`Target element not found: .epwrapper`);
-      return () => {};
+      return;
     }
 
     // Initial style copy
@@ -463,9 +463,6 @@ export class MasterObserver {
     });
 
     this.styleObserver = observer;
-
-    // Return cleanup function
-    return () => observer.disconnect();
   }
 
   /**
@@ -491,12 +488,6 @@ export class MasterObserver {
     // Clean up scroll handlers
     window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("resize", this.handleScroll);
-
-    // Clean up style sync function
-    if (this.cleanupStyleFunction) {
-      this.cleanupStyleFunction();
-      this.cleanupStyleFunction = null;
-    }
 
     // Clear element sets
     this.observedElements.clear();
