@@ -40,6 +40,9 @@ export class MasterObserver {
   private currentChapterIndex: number = 0;
   private fetching = false;
   private styleObserver: MutationObserver | null = null;
+  // Track displayed chapters
+  private displayedChapters: HTMLElement[] = [];
+  private maxDisplayedChapters: number = 3;
 
   /**
    * Creates a new MasterObserver instance
@@ -251,6 +254,9 @@ export class MasterObserver {
     currentChapter.appendChild(userOptions);
 
     this.currentChapter = currentChapter as HTMLElement;
+
+    // Add this chapter to the displayed chapters array
+    this.displayedChapters.push(currentChapter as HTMLElement);
   }
 
   /**
@@ -354,10 +360,34 @@ export class MasterObserver {
       // Fetch full chapter data
       const chapterData = await api.getChapter(nextChapterInfo.id);
       await this.createChapterElement(chapterData);
+
+      // Remove old chapters if we have more than the maximum
+      this.pruneOldChapters();
     } catch (error) {
       console.error("Failed to load next chapter:", error);
     } finally {
       this.fetching = false;
+    }
+  }
+
+  /**
+   * Remove old chapters if more than maxDisplayedChapters are showing
+   */
+  private pruneOldChapters(): void {
+    while (this.displayedChapters.length > this.maxDisplayedChapters) {
+      const oldestChapter = this.displayedChapters.shift();
+      if (oldestChapter && oldestChapter.parentNode) {
+        // Get the chapter ID before removing
+        const chapterId = oldestChapter.getAttribute("chapter-id");
+
+        // Remove the element from the DOM
+        oldestChapter.parentNode.removeChild(oldestChapter);
+
+        // Remove from tracked chapters if we have an ID
+        if (chapterId) {
+          this.createdChapters.delete(Number(chapterId));
+        }
+      }
     }
   }
 
@@ -372,6 +402,7 @@ export class MasterObserver {
       className: "chapter-container",
       attributes: {
         "data-url": chapter.link,
+        "chapter-id": chapter.id.toString(),
       },
     });
 
@@ -413,6 +444,9 @@ export class MasterObserver {
 
     this.currentChapter?.after(chapterContainer);
     this.currentChapter = chapterContainer;
+
+    // Add to displayed chapters array
+    this.displayedChapters.push(chapterContainer);
 
     NotificationManager.show({
       message: this.chapterData?.title ?? "Chapter loaded",
@@ -542,5 +576,6 @@ export class MasterObserver {
     // Clear element sets
     this.observedElements.clear();
     this.createdChapters.clear();
+    this.displayedChapters = [];
   }
 }
