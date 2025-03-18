@@ -12,11 +12,10 @@ import {
 } from "../lib/API";
 import { debounce } from "../lib/utli";
 
-// Centralized interfaces for better type clarity
-
-type NovelData = APINovel & {
+// Improved type definitions
+interface NovelData extends APINovel {
   saved: boolean;
-};
+}
 
 interface Settings {
   saved: boolean;
@@ -27,20 +26,25 @@ interface Settings {
  * MasterObserver class for tracking reading progress and managing chapters
  */
 export class MasterObserver {
+  // Private properties
   private chapterData: ChapterList | null = null;
   private novelData: NovelData | null = null;
   private observedElements: Set<HTMLElement> = new Set();
   private createdChapters: Set<number> = new Set();
-  private mutationObserver: MutationObserver | null = null;
   private currentChapter: HTMLElement | null = null;
   private settings: Settings = {
     saved: false,
     autoLoader: false,
   };
-  private chapterList: Array<ChapterList> = [];
+  private chapterList: ChapterList[] = [];
   private currentChapterIndex: number = 0;
   private fetching = false;
+  private styleObserver: MutationObserver | null = null;
+  private cleanupStyleFunction: Function | null = null;
 
+  /**
+   * Creates a new MasterObserver instance
+   */
   constructor() {
     this.initialize();
   }
@@ -49,38 +53,29 @@ export class MasterObserver {
    * Primary initialization method
    */
   private async initialize(): Promise<void> {
-    // Setup settings first
-    this.loadSettingsFromStorage();
-    this.setupSettingsUI();
+    // Setup settings
+    this.setupSettings();
 
+    // Setup chapter navigation and infinite scroll
     if (this.settings.autoLoader) {
-      if ("scrollRestoration" in history) {
-        history.scrollRestoration = "manual";
-      }
-
-      window.onbeforeunload = function () {
-        window.scrollTo(0, 0);
-      };
-
-      // adding scroll event listeners
-      const debouncedScroll = debounce(this.handleScroll, 300);
-
-      window.addEventListener("scroll", debouncedScroll);
-      window.addEventListener("resize", debouncedScroll);
-
-      // Initial check
-      this.handleScroll();
+      this.setupScrollNavigation();
     }
 
-    // Initialize novel and chapter data
+    // Initialize data and UI
     await this.loadNovelData();
     await this.setupCurrentChapter();
+    await this.loadChaptersList();
 
-    // get Chapters
-    await this.getChapters();
+    // Setup chapter styling
+    this.cleanupStyleFunction = this.setupChapterStyle();
+  }
 
-    //  setup styles for chapter
-    this.setupChapterStyle();
+  /**
+   * Setup settings from storage and create UI
+   */
+  private setupSettings(): void {
+    this.loadSettingsFromStorage();
+    this.createSettingsUI();
   }
 
   /**
@@ -92,28 +87,45 @@ export class MasterObserver {
   }
 
   /**
-   * Setup settings UI components
+   * Create and inject settings UI
    */
-  private setupSettingsUI(): void {
+  private createSettingsUI(): void {
     const { container: toggleContainer, input: toggleInput } = Create.toogle();
 
     toggleInput.checked = this.settings.autoLoader;
     toggleInput.addEventListener("change", () => {
-      if (this.settings.autoLoader !== toggleInput.checked) {
-        // Update settings
-        this.settings.autoLoader = toggleInput.checked;
-        localStorage.setItem(
-          "autoLoaderState",
-          this.settings.autoLoader.toString()
-        );
-      }
+      this.settings.autoLoader = toggleInput.checked;
+      localStorage.setItem(
+        "autoLoaderState",
+        this.settings.autoLoader.toString()
+      );
     });
 
     document.querySelector("div.optx-content")?.appendChild(toggleContainer);
   }
 
   /**
-   * Fetch and set up novel data
+   * Setup infinite scroll functionality
+   */
+  private setupScrollNavigation(): void {
+    // Reset scroll position on page refresh
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+
+    window.onbeforeunload = () => window.scrollTo(0, 0);
+
+    // Add scroll event listeners with debounce
+    const debouncedScroll = debounce(this.handleScroll, 300);
+    window.addEventListener("scroll", debouncedScroll);
+    window.addEventListener("resize", debouncedScroll);
+
+    // Initial check
+    this.handleScroll();
+  }
+
+  /**
+   * Fetch and setup novel data
    */
   private async loadNovelData(): Promise<void> {
     const article = document.querySelector("article");
@@ -140,69 +152,121 @@ export class MasterObserver {
   }
 
   /**
-   * Fetch next chapter and create UI element
+   * Load all chapters list for the current novel
    */
-  async createChapter(nextChapter: APIChapter): Promise<void> {
-    if (this.createdChapters.has(nextChapter.id)) return;
-    this.createdChapters.add(nextChapter.id);
-    const chapterContainer = Create.div({
-      className: "chapter-container",
-      attributes: {
-        "data-url": nextChapter.link,
-      },
-    });
-    const chapterTitle = Create.div({
-      className: "chapter-title",
-      children: [
-        Create.a({
-          href: nextChapter.link,
-          textContent: nextChapter.title.rendered,
-          className: "endless-link",
-        }),
-      ],
-    });
-    const chapterContent = Create.div({
-      className: "chapter-content",
-      children: [
-        Create.div({
-          className: "chapter-content-inner",
-          innerHTML: nextChapter.content.rendered,
-        }),
-      ],
-      attributes: {
-        chapterId: nextChapter.id.toString(),
-        novelId: this.novelData?.id?.toString() ?? "null",
-      },
-    });
-
-    // Add chapter to DOM
-    chapterContainer.appendChild(chapterTitle);
-    chapterContainer.appendChild(chapterContent);
-    chapterContainer.appendChild(
-      this.createUserOptions(
-        this.chapterData?.title ?? nextChapter.title.rendered,
-        this.chapterData?.link ?? nextChapter.link
-      )
-    );
-    this.currentChapter?.after(chapterContainer);
-    this.currentChapter = chapterContainer;
-
-    this.fetching = false;
-  }
-
-  async getChapters(): Promise<void> {
+  private async loadChaptersList(): Promise<void> {
     if (!this.novelData) return;
-    const chapters = await api.getChaptersList(this.novelData?.slug);
-    this.chapterList = chapters;
-    this.currentChapterIndex = chapters.findIndex(
-      (chapter) => chapter.id === this.chapterData?.id
-    );
+
+    try {
+      this.chapterList = await api.getChaptersList(this.novelData.slug);
+      this.currentChapterIndex = this.chapterList.findIndex(
+        (chapter) => chapter.id === this.chapterData?.id
+      );
+    } catch (error) {
+      console.error("Failed to load chapters list:", error);
+    }
   }
 
   /**
-   * Calculate how much of the current chapter has been scrolled past
+   * Set up the current chapter DOM element
    */
-  private getScrolledPastPercentage(): number {
+  private async setupCurrentChapter(): Promise<void> {
+    const currentUrl = window.location.href;
+    const titleElement = document.querySelector(SITE_CONFIGS.selectors.title);
+    const currentChapter = document.querySelector(
+      SITE_CONFIGS.selectors.content
+    );
+
+    if (!currentChapter) {
+      NotificationManager.show({
+        message: "Setting up chapter failed!",
+        variant: "error",
+      });
+      return;
+    }
+
+    const chapterTitle = titleElement?.textContent ?? "Unknown Chapter";
+
+    // Setup the current chapter element
+    currentChapter.classList.add("chapter-container", "track-content");
+    currentChapter.setAttribute(
+      "novel-id",
+      this.novelData?.id?.toString() ?? "null"
+    );
+    currentChapter.setAttribute("data-url", currentUrl);
+
+    // Extract chapter metadata
+    await this.extractChapterMetadata(
+      currentChapter as HTMLElement,
+      currentUrl,
+      chapterTitle
+    );
+
+    // Add user options UI
+    const userOptions = this.createUserOptionsUI(chapterTitle, currentUrl);
+    currentChapter.appendChild(userOptions);
+
+    this.currentChapter = currentChapter as HTMLElement;
+  }
+
+  /**
+   * Extract and set chapter metadata
+   */
+  private async extractChapterMetadata(
+    element: HTMLElement,
+    url: string,
+    title: string
+  ): Promise<void> {
+    const article = document.querySelector("article");
+    if (!article) return;
+
+    const articleID = article.id;
+    const id = articleID?.split("-")[1];
+
+    if (!id || Number.isNaN(Number(id))) return;
+
+    const breadCrumbs = document.querySelector(
+      "div.ts-breadcrumb.bixbox > div"
+    );
+    if (!breadCrumbs) return;
+
+    const currentChapterTitle =
+      breadCrumbs.querySelector("span:nth-child(2) a")?.textContent ?? "";
+    const novelTitle =
+      breadCrumbs.querySelector("span:nth-child(3) a")?.textContent ?? "";
+
+    const index = apiUtil.getChapterIndex(
+      currentChapterTitle,
+      this.novelData?.name ?? novelTitle
+    );
+
+    // Set chapter data
+    this.chapterData = {
+      id: Number(id),
+      link: url,
+      title: title,
+      chapterIndex: index,
+    };
+
+    element.setAttribute("chapter-id", id);
+  }
+
+  /**
+   * Scroll event handler for infinite loading
+   */
+  private handleScroll = async (): Promise<void> => {
+    const scrollPercentage = this.calculateScrollPercentage();
+
+    // Load next chapter when we're 80% through the current one
+    if (scrollPercentage > 80 && !this.fetching) {
+      await this.loadNextChapter();
+    }
+  };
+
+  /**
+   * Calculate how much of the current chapter has been scrolled
+   */
+  private calculateScrollPercentage(): number {
     const el = this.currentChapter;
     if (!el) return 0;
 
@@ -210,14 +274,11 @@ export class MasterObserver {
     const windowHeight =
       window.innerHeight || document.documentElement.clientHeight;
 
-    // Element is above viewport
-    if (rect.top >= windowHeight) return 100;
-
-    // Element is completely scrolled past
+    // Element is above viewport (completely scrolled past)
     if (rect.top <= -rect.height) return 100;
 
     // Element is below viewport (not seen yet)
-    if (rect.bottom <= 0) return 0;
+    if (rect.top >= windowHeight) return 0;
 
     // Calculate partial scroll percentage
     const scrolledPastHeight = Math.max(0, -rect.top);
@@ -229,24 +290,94 @@ export class MasterObserver {
   }
 
   /**
-   * Scroll event handler
+   * Load and append the next chapter
    */
-  private handleScroll = async (): Promise<void> => {
-    const percentageVisible = Math.floor(this.getScrolledPastPercentage());
-    if (percentageVisible > 80 && !this.fetching) {
-      this.fetching = true;
+  private async loadNextChapter(): Promise<void> {
+    this.fetching = true;
+
+    try {
+      // Get next chapter in the list
       this.currentChapterIndex++;
-      this.chapterData = this.chapterList[this.currentChapterIndex];
-      const chapterData = await api.getChapter(this.chapterData.id);
-      await this.createChapter(chapterData);
+      const nextChapterInfo = this.chapterList[this.currentChapterIndex];
+
+      if (!nextChapterInfo) {
+        this.fetching = false;
+        return;
+      }
+
+      this.chapterData = nextChapterInfo;
+
+      // Fetch full chapter data
+      const chapterData = await api.getChapter(nextChapterInfo.id);
+      await this.createChapterElement(chapterData);
+    } catch (error) {
+      console.error("Failed to load next chapter:", error);
+    } finally {
+      this.fetching = false;
     }
-    // Additional scroll logic can be implemented here
-  };
+  }
+
+  /**
+   * Create and append a new chapter element
+   */
+  private async createChapterElement(chapter: APIChapter): Promise<void> {
+    if (this.createdChapters.has(chapter.id)) return;
+    this.createdChapters.add(chapter.id);
+
+    const chapterContainer = Create.div({
+      className: "chapter-container",
+      attributes: {
+        "data-url": chapter.link,
+      },
+    });
+
+    const chapterTitle = Create.div({
+      className: "chapter-title",
+      children: [
+        Create.a({
+          href: chapter.link,
+          textContent: chapter.title.rendered,
+          className: "endless-link",
+        }),
+      ],
+    });
+
+    const chapterContent = Create.div({
+      className: "chapter-content",
+      children: [
+        Create.div({
+          className: "chapter-content-inner",
+          innerHTML: chapter.content.rendered,
+        }),
+      ],
+      attributes: {
+        chapterId: chapter.id.toString(),
+        novelId: this.novelData?.id?.toString() ?? "null",
+      },
+    });
+
+    // Create user options UI
+    const userOptions = this.createUserOptionsUI(
+      this.chapterData?.title ?? chapter.title.rendered,
+      this.chapterData?.link ?? chapter.link
+    );
+
+    // Assemble and append the chapter
+    chapterContainer.appendChild(chapterTitle);
+    chapterContainer.appendChild(chapterContent);
+    chapterContainer.appendChild(userOptions);
+
+    this.currentChapter?.after(chapterContainer);
+    this.currentChapter = chapterContainer;
+  }
 
   /**
    * Create user options UI element
    */
-  private createUserOptions(title: string, chapterUrl: string): HTMLDivElement {
+  private createUserOptionsUI(
+    title: string,
+    chapterUrl: string
+  ): HTMLDivElement {
     return Create.div({
       className: "chapter-options-container",
       children: [
@@ -290,120 +421,38 @@ export class MasterObserver {
   }
 
   /**
-   * Set up the current chapter for tracking
+   * Setup style synchronization between source and new elements
    */
-  private async setupCurrentChapter(): Promise<void> {
-    const currentUrl = window.location.href;
-    const titleElement = document.querySelector(SITE_CONFIGS.selectors.title);
-    const currentChapter = document.querySelector(
-      SITE_CONFIGS.selectors.content
-    );
-
-    if (!currentChapter) {
-      NotificationManager.show({
-        message: "Setting up chapter failed!",
-        variant: "error",
-      });
-      return;
-    }
-
-    const chapterTitle = titleElement?.textContent ?? "Unknown Chapter";
-
-    // Add user options to the chapter container
-    const userOptions = this.createUserOptions(chapterTitle, currentUrl);
-
-    currentChapter.appendChild(userOptions);
-    this.currentChapter = currentChapter as HTMLElement;
-
-    // Set up chapter for tracking
-    currentChapter.classList.add("chapter-container", "track-content");
-    currentChapter.setAttribute(
-      "novel-id",
-      this.novelData?.id?.toString() ?? "null"
-    );
-    currentChapter.setAttribute("data-url", currentUrl);
-
-    // Extract chapter ID and set up chapter data
-    await this.setupChapterData(currentChapter, currentUrl, chapterTitle);
-  }
-
-  /**
-   * Set up chapter data from page elements
-   */
-  private async setupChapterData(
-    currentChapter: Element,
-    currentUrl: string,
-    chapterTitle: string
-  ): Promise<void> {
-    const article = document.querySelector("article");
-    if (!article) return;
-
-    const articleID = article.id;
-    const id = articleID?.split("-")[1];
-
-    if (!id || Number.isNaN(Number(id))) return;
-
-    const breadCrumbs = document.querySelector(
-      "div.ts-breadcrumb.bixbox > div"
-    );
-    if (!breadCrumbs) return;
-
-    const currentChapterTitle =
-      breadCrumbs.querySelector("span:nth-child(2) a")?.textContent ?? "";
-    const novelTitle =
-      breadCrumbs.querySelector("span:nth-child(3) a")?.textContent ?? "";
-
-    const index = apiUtil.getChapterIndex(
-      currentChapterTitle,
-      this.novelData?.name ?? novelTitle
-    );
-
-    // Set up chapter data
-    this.chapterData = {
-      id: Number(id),
-      link: currentUrl,
-      title: chapterTitle,
-      chapterIndex: index,
-    };
-
-    currentChapter.setAttribute("chapter-id", id);
-  }
-
   private setupChapterStyle(): () => void {
     const sourceElement = document.querySelector(
       SITE_CONFIGS.selectors.content
     ) as HTMLElement;
 
     if (!sourceElement) {
-      console.error(`Element not found: ${SITE_CONFIGS.selectors.content}`);
-      return () => {}; // Return an empty disconnect function
+      console.error(
+        `Source element not found: ${SITE_CONFIGS.selectors.content}`
+      );
+      return () => {};
     }
 
-    let newElement = document.querySelector(".epwrapper") as HTMLElement;
+    const targetElement = document.querySelector(".epwrapper") as HTMLElement;
 
-    if (!newElement) {
-      console.error(`Element not found: .epwrapper`);
-      return () => {}; // Return an empty disconnect function
+    if (!targetElement) {
+      console.error(`Target element not found: .epwrapper`);
+      return () => {};
     }
 
-    // Copy initial styles
-    for (const prop of sourceElement.style) {
-      const value = sourceElement.style.getPropertyValue(prop);
-      newElement.style.setProperty(prop, value);
-    }
+    // Initial style copy
+    this.syncStyles(sourceElement, targetElement);
 
-    // MutationObserver to track style changes
+    // Create observer to track style changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
           mutation.type === "attributes" &&
           mutation.attributeName === "style"
         ) {
-          // Update new element's styles
-          for (const prop of sourceElement.style) {
-            const value = sourceElement.style.getPropertyValue(prop);
-            newElement.style.setProperty(prop, value);
-          }
+          this.syncStyles(sourceElement, targetElement);
         }
       });
     });
@@ -413,22 +462,44 @@ export class MasterObserver {
       attributeFilter: ["style"],
     });
 
-    // Optional: Disconnect the observer when no longer needed
+    this.styleObserver = observer;
+
+    // Return cleanup function
     return () => observer.disconnect();
+  }
+
+  /**
+   * Sync styles between two elements
+   */
+  private syncStyles(source: HTMLElement, target: HTMLElement): void {
+    for (const prop of source.style) {
+      const value = source.style.getPropertyValue(prop);
+      target.style.setProperty(prop, value);
+    }
   }
 
   /**
    * Clean up observers and event listeners
    */
   public destroy(): void {
-    if (this.mutationObserver) {
-      this.mutationObserver.disconnect();
-      this.mutationObserver = null;
+    // Clean up style observer
+    if (this.styleObserver) {
+      this.styleObserver.disconnect();
+      this.styleObserver = null;
     }
 
+    // Clean up scroll handlers
     window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("resize", this.handleScroll);
 
+    // Clean up style sync function
+    if (this.cleanupStyleFunction) {
+      this.cleanupStyleFunction();
+      this.cleanupStyleFunction = null;
+    }
+
+    // Clear element sets
     this.observedElements.clear();
+    this.createdChapters.clear();
   }
 }
