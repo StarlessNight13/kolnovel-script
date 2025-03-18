@@ -1,0 +1,21 @@
+.chapterPage {
+  &.removeElements {
+    #Bottum_Down,
+    div.announ,
+    article > div.bixbox.episodedl > div.bixbox,
+    div.socialts {
+      display: none !important;
+    }
+  }
+
+  .chapter-content {
+    font-size: inherit;
+    line-height: inherit;
+    font-family: inherit;
+  }
+
+  .sentinel {
+    width: 100%;
+    height: 1px;
+  }
+}

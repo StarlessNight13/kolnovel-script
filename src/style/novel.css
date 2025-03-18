@@ -1,0 +1,31 @@
+.novelPage {
+  /* 
+  Hide/Show buttons 
+  based on the indexation status of the library
+  (indexation is done when the library is loaded)
+*/
+
+  #btn-container[data-indexed="true"] {
+    #remove-btn {
+      display: inline-flex;
+    }
+    #planning-btn {
+      display: none;
+    }
+    #reading-btn {
+      display: none;
+    }
+  }
+
+  #btn-container[data-indexed="false"] {
+    #remove-btn {
+      display: none;
+    }
+    #planning-btn {
+      display: inline-flex;
+    }
+    #reading-btn {
+      display: inline-flex;
+    }
+  }
+}
