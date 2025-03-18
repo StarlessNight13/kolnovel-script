@@ -1,252 +1,178 @@
 import { Bot, createElement } from "lucide";
 
+type ElementVariant = "destructive" | "muted" | "outline";
+type ElementChild = Element | HTMLElement | SVGElement;
+
+// Base interface for all element creation functions
+interface BaseElementProps {
+  className?: string | string[];
+  id?: string;
+  textContent?: string;
+  variant?: ElementVariant;
+  children?: ElementChild | ElementChild[];
+  attributes?: Record<string, string>;
+}
+
+// Extended interfaces for specific element types
+interface ButtonElementProps extends BaseElementProps {
+  clickFunc?: (this: HTMLButtonElement, ev: MouseEvent) => void;
+  icon?: Element;
+}
+
+interface AnchorElementProps extends BaseElementProps {
+  href?: string;
+}
+
+interface DivElementProps extends BaseElementProps {
+  innerHTML?: string;
+}
+
 export const Create = {
-  endlessButton: ({
-    className,
-    id,
-    textContent,
-    variant,
-    children,
-    clickFunc,
-  }: {
-    className?: string | string[];
-    id?: string;
-    textContent?: string;
-    variant?: "destructive" | "muted" | "outline";
-    children?: HTMLElement | HTMLElement[] | SVGElement;
-    clickFunc?: () => void;
-  }) => {
-    const button = document.createElement("button");
-    if (textContent) {
-      button.textContent = textContent;
+  /**
+   * Creates and configures an HTML element with common properties
+   * @param tagName - HTML element tag name to create
+   * @param props - Configuration properties
+   * @returns Configured HTML element
+   */
+  element<T extends HTMLElement>(tagName: string, props: BaseElementProps): T {
+    const element = document.createElement(tagName) as T;
+
+    // Apply text content if provided
+    if (props.textContent) {
+      element.textContent = props.textContent;
     }
-    if (className) {
-      if (Array.isArray(className)) {
-        className.forEach((className) => {
-          button.classList.add(className);
-        });
+
+    // Apply class names
+    if (props.className) {
+      if (Array.isArray(props.className)) {
+        props.className.forEach((cls) => element.classList.add(cls));
       } else {
-        button.classList.add(className);
+        element.className = props.className;
       }
     }
-    if (clickFunc) {
-      button.addEventListener("click", clickFunc);
+
+    // Apply ID if provided
+    if (props.id) {
+      element.id = props.id;
     }
-    if (id) {
-      button.id = id;
+
+    // Apply variant as data attribute
+    if (props.variant) {
+      element.setAttribute("data-variant", props.variant);
     }
-    if (variant) {
-      button.setAttribute("data-variant", variant);
+
+    // Apply custom attributes
+    if (props.attributes) {
+      Object.entries(props.attributes).forEach(([key, value]) => {
+        element.setAttribute(key, value);
+      });
     }
-    if (children) {
-      if (Array.isArray(children)) {
-        // If children is an array, append each child
-        children.forEach((child) => {
-          button.appendChild(child);
-        });
-      } else if (children instanceof HTMLElement) {
-        // If children is a single HTMLElement, append it
-        button.appendChild(children);
-      } else if (children instanceof SVGElement) {
-        // If children is a single SVGElement, append it
-        button.appendChild(children);
-      }
+
+    // Append children
+    if (props.children) {
+      const childrenArray = Array.isArray(props.children)
+        ? props.children
+        : [props.children];
+      childrenArray.forEach((child) => {
+        if (child instanceof Element) {
+          element.appendChild(child);
+        }
+      });
     }
+
+    return element;
+  },
+
+  /**
+   * Creates a button element
+   */
+  button(props: ButtonElementProps): HTMLButtonElement {
+    const button = this.element<HTMLButtonElement>("button", props);
+
+    // Add click event listener
+    if (props.clickFunc) {
+      button.addEventListener("click", props.clickFunc);
+    }
+
+    // Add icon if provided
+    if (props.icon) {
+      button.appendChild(props.icon);
+    }
+
+    // Add default class
     button.classList.add("endless-button");
+
     return button;
   },
-  div: ({
-    className,
-    id,
-    textContent,
-    variant,
-    children,
-    attributes = {},
-    innerHTML,
-  }: {
-    className?: string | string[];
-    id?: string;
-    textContent?: string;
-    variant?: "destructive" | "muted" | "outline";
-    children?: Element | Element[];
-    attributes?: Record<string, string>;
-    innerHTML?: string;
-  }): HTMLDivElement => {
-    const div = document.createElement("div");
 
-    if (innerHTML) {
-      div.innerHTML = innerHTML;
+  /**
+   * Creates a div element
+   */
+  div(props: DivElementProps): HTMLDivElement {
+    const div = this.element<HTMLDivElement>("div", props);
+
+    // Apply innerHTML if provided
+    if (props.innerHTML) {
+      div.innerHTML = props.innerHTML;
     }
-    if (textContent) {
-      div.textContent = textContent;
-    }
-    if (className) {
-      if (Array.isArray(className)) {
-        className.forEach((className) => {
-          div.classList.add(className);
-        });
-      } else {
-        div.className = className;
-      }
-    }
-    Object.entries(attributes).forEach(([key, value]) => {
-      div.setAttribute(key, value);
-    });
-    if (id) {
-      div.id = id;
-    }
-    if (variant) {
-      div.setAttribute("data-variant", variant);
-    }
-    if (children) {
-      if (Array.isArray(children)) {
-        // If children is an array, append each child
-        children.forEach((child) => {
-          div.appendChild(child);
-        });
-      } else if (children instanceof Element) {
-        // If children is a single HTMLElement, append it
-        div.appendChild(children);
-      }
-    }
+
     return div;
   },
-  a: ({
-    className,
-    id,
-    textContent,
-    variant,
-    children,
-    href,
-    attributes = {},
-  }: {
-    className?: string | string[];
-    id?: string;
-    textContent?: string;
-    variant?: "destructive" | "muted" | "outline";
-    children?: HTMLElement | HTMLElement[] | SVGElement;
-    href?: string;
-    attributes?: Record<string, string>;
-  }) => {
-    const a = document.createElement("a");
-    if (textContent) {
-      a.textContent = textContent;
-    }
-    if (className) {
-      if (Array.isArray(className)) {
-        className.forEach((className) => {
-          a.classList.add(className);
-        });
-      } else {
-        a.className = className;
-      }
-    }
-    Object.entries(attributes).forEach(([key, value]) => {
-      a.setAttribute(key, value);
-    });
 
-    if (id) {
-      a.id = id;
+  /**
+   * Creates an anchor element
+   */
+  a(props: AnchorElementProps): HTMLAnchorElement {
+    const anchor = this.element<HTMLAnchorElement>("a", props);
+
+    // Set href if provided
+    if (props.href) {
+      anchor.href = props.href;
     }
-    if (href) {
-      a.href = href;
-    }
-    if (variant) {
-      a.setAttribute("data-variant", variant);
-    }
-    if (children) {
-      if (Array.isArray(children)) {
-        // If children is an array, append each child
-        children.forEach((child) => {
-          a.appendChild(child);
-        });
-      } else if (children instanceof HTMLElement) {
-        // If children is a single HTMLElement, append it
-        a.appendChild(children);
-      } else if (children instanceof SVGElement) {
-        // If children is a single SVGElement, append it
-        a.appendChild(children);
-      }
-    }
-    return a;
+
+    return anchor;
   },
-  span: ({
-    className,
-    id,
-    textContent,
-    variant,
-    children,
-    attributes = {},
-  }: {
-    className?: string | string[];
-    id?: string;
-    textContent?: string;
-    variant?: "destructive" | "muted" | "outline";
-    children?: (HTMLElement | SVGElement)[] | (HTMLElement | SVGElement);
-    attributes?: Record<string, string>;
-  }): HTMLSpanElement => {
-    const span = document.createElement("span");
-    if (textContent) {
-      span.textContent = textContent;
-    }
-    if (className) {
-      if (Array.isArray(className)) {
-        className.forEach((className) => {
-          span.classList.add(className);
-        });
-      } else {
-        span.className = className;
-      }
-    }
-    Object.entries(attributes).forEach(([key, value]) => {
-      span.setAttribute(key, value);
-    });
-    if (id) {
-      span.id = id;
-    }
-    if (variant) {
-      span.setAttribute("data-variant", variant);
-    }
-    if (children) {
-      if (Array.isArray(children)) {
-        // If children is an array, append each child
-        children.forEach((child) => {
-          span.appendChild(child);
-        });
-      } else if (children instanceof HTMLElement) {
-        // If children is a single HTMLElement, append it
-        span.appendChild(children);
-      } else if (children instanceof SVGElement) {
-        // If children is a single SVGElement, append it
-        span.appendChild(children);
-      }
-    }
-    return span;
+
+  /**
+   * Creates a span element
+   */
+  span(props: BaseElementProps): HTMLSpanElement {
+    return this.element<HTMLSpanElement>("span", props);
   },
-  toogle: () => {
-    const toggleContainer = Create.div({
+
+  /**
+   * Creates a toggle control
+   */
+  toogle() {
+    const toggleContainer = this.div({
       className: "toggle-container",
       id: "toggle-container",
     });
-    const userSettingsItemInput = document.createElement("input");
-    userSettingsItemInput.type = "checkbox";
-    userSettingsItemInput.className = "hidden";
-    userSettingsItemInput.id = "auto-loader-toggle";
-    toggleContainer.appendChild(userSettingsItemInput);
 
-    const userSettingsItemLabel = document.createElement("label");
-    userSettingsItemLabel.htmlFor = "auto-loader-toggle";
-    userSettingsItemLabel.textContent = "Auto Loader";
-    userSettingsItemLabel.className = "endless-toggle ";
+    const input = this.element<HTMLInputElement>("input", {
+      id: "auto-loader-toggle",
+      className: "hidden",
+      attributes: { type: "checkbox" },
+    });
+
+    const label = this.element<HTMLLabelElement>("label", {
+      textContent: "Auto Loader",
+      className: "endless-toggle",
+      attributes: { for: "auto-loader-toggle" },
+    });
+
+    // Add Bot icon to label
     const bot = createElement(Bot);
-    userSettingsItemLabel.appendChild(bot);
-    toggleContainer.appendChild(userSettingsItemLabel);
+    label.appendChild(bot);
 
-    // Return the container element, which now holds the toggle
+    // Assemble the toggle
+    toggleContainer.appendChild(input);
+    toggleContainer.appendChild(label);
+
     return {
       container: toggleContainer,
-      input: userSettingsItemInput,
-      label: userSettingsItemLabel,
+      input,
+      label,
     };
   },
 };

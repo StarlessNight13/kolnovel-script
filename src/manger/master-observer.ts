@@ -1,4 +1,4 @@
-import { Book, createElement } from "lucide";
+import { Bold, Book, createElement, Italic } from "lucide";
 import { Create } from "../components/creat-element";
 import { NotificationManager } from "../components/Notification";
 import { SITE_CONFIGS } from "../config";
@@ -100,7 +100,52 @@ export class MasterObserver {
       );
     });
 
-    document.querySelector("div.optx-content")?.appendChild(toggleContainer);
+    const customContainer = Create.div({
+      className: "options",
+    });
+
+    const styleContainer = Create.div({
+      className: "styles-container",
+      children: [
+        Create.button({
+          className: "bold-button",
+          textContent: "Bold",
+          attributes: {
+            "data-variant": "muted",
+          },
+          clickFunc: () => {
+            const bold = document
+              .querySelector(".epwrapper")
+              ?.classList.toggle("none-bold");
+
+            document
+              .querySelector(".bold-button")
+              ?.setAttribute("data-variant", bold ? "primary" : "muted");
+          },
+          icon: createElement(Bold),
+        }),
+        Create.button({
+          className: "italic-button",
+          textContent: "Italic",
+          attributes: {
+            "data-variant": "muted",
+          },
+          clickFunc: () => {
+            const italic = document
+              .querySelector(".epwrapper")
+              ?.classList.toggle("none-italic");
+
+            document
+              .querySelector(".italic-button")
+              ?.setAttribute("data-variant", italic ? "primary" : "muted");
+          },
+          icon: createElement(Italic),
+        }),
+      ],
+    });
+    customContainer.appendChild(styleContainer);
+    customContainer.appendChild(toggleContainer);
+    document.querySelector("div.main-option")?.appendChild(customContainer);
   }
 
   /**
@@ -256,8 +301,8 @@ export class MasterObserver {
   private handleScroll = async (): Promise<void> => {
     const scrollPercentage = this.calculateScrollPercentage();
 
-    // Load next chapter when we're 80% through the current one
-    if (scrollPercentage > 80 && !this.fetching) {
+    // Load next chapter when we're 60% through the current one
+    if (scrollPercentage > 60 && !this.fetching) {
       await this.loadNextChapter();
     }
   };
@@ -368,6 +413,11 @@ export class MasterObserver {
 
     this.currentChapter?.after(chapterContainer);
     this.currentChapter = chapterContainer;
+
+    NotificationManager.show({
+      message: this.chapterData?.title ?? "Chapter loaded",
+      variant: "success",
+    });
   }
 
   /**
@@ -411,8 +461,9 @@ export class MasterObserver {
           },
         }),
         // Settings button
-        Create.endlessButton({
+        Create.button({
           textContent: "Settings",
+          className: "chapter-options-link endless-button",
           clickFunc: SITE_CONFIGS.openSettingsFunc,
         }),
       ],
