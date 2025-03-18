@@ -83,7 +83,7 @@ export class NovelComponent {
         }),
         Create.span({
           className: "truncate",
-          textContent: `${this.novel.novelChapters} فصلاً`,
+          textContent: `${this.novel.chaptersCount} فصلاً`,
           attributes: {
             style: "margin-inline: 5px",
           },
@@ -104,7 +104,7 @@ export class NovelComponent {
           }),
           Create.span({
             className: "truncate",
-            textContent: `قرات ${readChaptersCount} من ${this.novel.novelChapters}`,
+            textContent: `قرات ${readChaptersCount} من ${this.novel.chaptersCount}`,
             attributes: {
               style: "margin-inline: 5px",
             },
