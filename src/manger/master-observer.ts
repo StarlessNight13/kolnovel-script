@@ -40,7 +40,6 @@ export class MasterObserver {
   private currentChapterIndex: number = 0;
   private fetching = false;
   private styleObserver: MutationObserver | null = null;
-  private cleanupStyleFunction: Function | null = null;
 
   /**
    * Creates a new MasterObserver instance
