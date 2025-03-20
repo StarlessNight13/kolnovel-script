@@ -13,8 +13,8 @@ export default defineConfig({
       userscript: {
         icon: "https://www.google.com/s2/favicons?sz=64&domain=kolbook.xyz",
         namespace: "darkless/kolnovel",
-        version: "1.0.0",
-        match: ["https://kolbook.xyz/*"],
+        version: "1.0.1",
+        match: ["https://kolbook.xyz/*", "https://kolnovel.com/*"],
         updateURL:
           "https://github.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel-script.user.js",
         downloadURL:
