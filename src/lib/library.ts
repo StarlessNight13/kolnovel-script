@@ -221,6 +221,7 @@ class LibraryManager {
   ): Promise<NovelUpdateResult> {
     try {
       const latestNovelData = await api.getNovelbyChapterId(Number(novel.id));
+      if (!latestNovelData) return { id: novel.id, hasUpdates: false };
       const hasUpdates = latestNovelData.count !== novel.chaptersCount;
 
       if (hasUpdates) {
@@ -318,6 +319,7 @@ class LibraryManager {
 export function initLibrary(): void {
   const contentContainer = document.querySelector<HTMLElement>("#content");
   if (!contentContainer) return;
+  window.document.title = "المكتبة";
 
   contentContainer.innerHTML = "";
   new LibraryManager(contentContainer);

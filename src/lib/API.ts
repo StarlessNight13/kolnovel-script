@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { tryCatch } from "./utli";
 
 // API_URL
 const API_URL = "https://kolbook.xyz/wp-json/wp/v2";
@@ -40,20 +41,24 @@ export type ChapterList = v.InferInput<typeof chapterListSchema>;
 export const api = {
   // Get novel
   getNovel: async (id: number) => {
-    const res = await fetch(`${API_URL}/categories/${id}`);
+    const { data: res, error: err } = await tryCatch(fetch(`${API_URL}/categories/${id}`));
+    if (err) return null;
     const data = await res.json();
     const safeData = v.parse(novelSchema, data);
     return safeData;
   },
   getNovelbyChapterId: async (chapterId: number) => {
-    const res = await fetch(`${API_URL}/categories?post=${chapterId}`);
+    // const res = await fetch(`${API_URL}/categories?post=${chapterId}`);
+    const { data: res, error: err } = await tryCatch(fetch(`${API_URL}/categories?post=${chapterId}`));
+    if (err) return null;
     const data = await res.json();
     const safeData = v.parse(v.array(novelSchema), data);
     return safeData[0];
   },
 
   getNovelbySlug: async (slug: string) => {
-    const res = await fetch(`${API_URL}/categories?slug=${slug}`);
+    const { data: res, error: err } = await tryCatch(fetch(`${API_URL}/categories?slug=${slug}`));
+    if (err) return null;
     const data = await res.json();
     const safeData = v.parse(v.array(novelSchema), data);
     return safeData[0];
@@ -61,7 +66,8 @@ export const api = {
 
   // Get Chapter
   getChapter: async (id: number) => {
-    const res = await fetch(`${API_URL}/posts/${id}`);
+    const { data: res, error: err } = await tryCatch(fetch(`${API_URL}/posts/${id}`));
+    if (err) return null;
     const data = await res.json();
     const safeData = v.parse(chapterSchema, data);
     return safeData;
@@ -71,9 +77,9 @@ export const api = {
     page: number = 1,
     pageSize: number = 10
   ) => {
-    const res = await fetch(
-      `${API_URL}/posts?categories=${novelId}&per_page=${pageSize}&page=${page}`
-    );
+
+    const { data: res, error: err } = await tryCatch(fetch(`${API_URL}/posts?categories=${novelId}&per_page=${pageSize}&page=${page}`));
+    if (err) return null;
     const data = await res.json();
     const safeData = v.parse(v.array(chapterSchema), data);
     return safeData;
@@ -81,7 +87,8 @@ export const api = {
 
   getChaptersList: async (uri: string) => {
     // Fetch and parse the HTML document
-    const response = await fetch(`https://kolbook.xyz/series/${uri}`);
+    const { data: response, error: err } = await tryCatch(fetch(`https://kolbook.xyz/series/${uri}`));
+    if (err) return null;
     const html = await response.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
 
@@ -106,7 +113,7 @@ export const api = {
         currentListIndex < chapterLists.length &&
         (!nextTitle ||
           chapterLists[currentListIndex].compareDocumentPosition(nextTitle) &
-            Node.DOCUMENT_POSITION_FOLLOWING)
+          Node.DOCUMENT_POSITION_FOLLOWING)
       ) {
         currentList = chapterLists[currentListIndex];
         currentListIndex++;
@@ -160,13 +167,10 @@ export const apiUtil = {
     offset: number = 0
   ) => {
     const totalCollections = Math.ceil(chapterCount / collectionSize);
-    console.log("🚀 ~ totalCollections:", totalCollections);
     const originalCollection = Math.floor(
       (chapterIndex - offset) / collectionSize
     );
-    console.log("🚀 ~ originalCollection:", originalCollection);
     const page = totalCollections - originalCollection;
-    console.log("🚀 ~ page:", page);
     return { page, totalCollections, originalCollection };
   },
   getChapterIndex: (chapterTitle: string, novelName: string) => {

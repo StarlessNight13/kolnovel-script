@@ -29,6 +29,7 @@ export class NotificationManager {
     variant?: "success" | "error" | "warning" | "info";
     id?: string;
   }): string {
+
     const {
       message,
       duration = this.defaultDuration,

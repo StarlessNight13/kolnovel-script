@@ -185,17 +185,17 @@ export class MasterObserver {
       return;
     }
 
-    try {
-      const novel = await api.getNovelbyChapterId(Number(id));
-      const savedNovel = !!(await db.novels.where({ id: novel.id }).first());
 
-      this.novelData = {
-        ...novel,
-        saved: savedNovel,
-      };
-    } catch (error) {
-      console.error("Failed to load novel data:", error);
-    }
+    const novel = await api.getNovelbyChapterId(Number(id));
+    if (!novel) return;
+
+    const savedNovel = !!(await db.novels.where({ id: novel.id }).first());
+
+    this.novelData = {
+      ...novel,
+      saved: savedNovel,
+    };
+
   }
 
   /**
@@ -204,14 +204,14 @@ export class MasterObserver {
   private async loadChaptersList(): Promise<void> {
     if (!this.novelData) return;
 
-    try {
-      this.chapterList = await api.getChaptersList(this.novelData.slug);
-      this.currentChapterIndex = this.chapterList.findIndex(
-        (chapter) => chapter.id === this.chapterData?.id
-      );
-    } catch (error) {
-      console.error("Failed to load chapters list:", error);
-    }
+
+    const chapters = await api.getChaptersList(this.novelData.slug);
+    if (!chapters) return;
+    this.chapterList = chapters;
+    this.currentChapterIndex = this.chapterList.findIndex(
+      (chapter) => chapter.id === this.chapterData?.id
+    );
+
   }
 
   /**
@@ -345,29 +345,35 @@ export class MasterObserver {
   private async loadNextChapter(): Promise<void> {
     this.fetching = true;
 
-    try {
-      // Get next chapter in the list
-      this.currentChapterIndex++;
-      const nextChapterInfo = this.chapterList[this.currentChapterIndex];
 
-      if (!nextChapterInfo) {
-        this.fetching = false;
-        return;
-      }
+    // Get next chapter in the list
+    this.currentChapterIndex++;
+    const nextChapterInfo = this.chapterList[this.currentChapterIndex];
 
-      this.chapterData = nextChapterInfo;
-
-      // Fetch full chapter data
-      const chapterData = await api.getChapter(nextChapterInfo.id);
-      await this.createChapterElement(chapterData);
-
-      // Remove old chapters if we have more than the maximum
-      this.pruneOldChapters();
-    } catch (error) {
-      console.error("Failed to load next chapter:", error);
-    } finally {
+    if (!nextChapterInfo) {
       this.fetching = false;
+      return;
     }
+
+    this.chapterData = nextChapterInfo;
+
+    // Fetch full chapter data
+    const chapterData = await api.getChapter(nextChapterInfo.id);
+    if (!chapterData) {
+      this.fetching = false;
+      NotificationManager.show({
+        message: `Error loading chapter ${nextChapterInfo.id}`,
+        variant: "error",
+      });
+      return;
+    };
+    await this.createChapterElement(chapterData);
+
+    // Remove old chapters if we have more than the maximum
+    this.pruneOldChapters();
+
+    // remove loading indicator
+    this.fetching = false;
   }
 
   /**
