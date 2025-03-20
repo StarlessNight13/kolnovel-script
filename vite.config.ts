@@ -17,9 +17,9 @@ export default defineConfig({
         version: "1.0.2",
         match: ["https://kolbook.xyz/*", "https://kolnovel.com/*"],
         updateURL:
-          "https://raw.githubusercontent.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel-script.user.js",
+          "https://github.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel.user.js",
         downloadURL:
-          "https://raw.githubusercontent.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel-script.user.js",
+          "https://github.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel.user.js",
       },
     }),
   ],
