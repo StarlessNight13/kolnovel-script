@@ -1,5 +1,7 @@
 import { NotificationManager } from "./components/Notification";
+import { initLibrary } from "./lib/library";
 import { MasterObserver } from "./manger/master-observer";
+import { NovelPageManager } from "./manger/novel-page";
 import { URLManager } from "./manger/URLManager";
 import "./style/index.css";
 
@@ -13,6 +15,7 @@ import "./style/index.css";
 
   if (currentPage === "user-library") {
     document.body.classList.add("libraryPage");
+    initLibrary();
   } else if (currentPage === "chapter") {
     document.body.classList.add("chapterPage");
     document.body.classList.add("removeElements");
@@ -20,6 +23,9 @@ import "./style/index.css";
     new URLManager();
   } else if (currentPage === "page") {
     document.body.classList.add("novelPage");
+
+    const manager = new NovelPageManager();
+    await manager.init();
   } else {
     document.body.classList.add("otherPage");
   }

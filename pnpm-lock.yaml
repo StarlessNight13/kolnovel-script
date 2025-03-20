@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.13.10
       dexie:
         specifier: ^4.0.11
         version: 4.0.11
@@ -23,10 +26,10 @@ importers:
         version: 5.8.2
       vite:
         specifier: ^6.0.5
-        version: 6.2.1
+        version: 6.2.1(@types/node@22.13.10)
       vite-plugin-monkey:
         specifier: ^5.0.3
-        version: 5.0.8(vite@6.2.1)
+        version: 5.0.8(vite@6.2.1(@types/node@22.13.10))
 
 packages:
 
@@ -281,6 +284,9 @@ packages:
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
 
+  '@types/node@22.13.10':
+    resolution: {integrity: sha512-I6LPUvlRH+O6VRUqYOcMudhaIdUVWfsjnZavnsraHvpBwaEyMN29ry+0UVJhImYL16xsscu0aske3yA+uPOWfw==}
+
   acorn-walk@8.3.4:
     resolution: {integrity: sha512-ueEepnujpqee2o5aIYnvHU6C0A42MNdsIDeqy5BydrkuC5R1ZuUFnm27EeFJGoEHJQgn3uleRvmTXaJgfXbt4g==}
     engines: {node: '>=0.4.0'}
@@ -421,6 +427,9 @@ packages:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  undici-types@6.20.0:
+    resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
   valibot@1.0.0-rc.4:
     resolution: {integrity: sha512-VRaChgFv7Ab0P54AMLu7+GqoexdTPQ54Plj59X9qV0AFozI3j9CGH43skg+TqgMpXnrW8jxlJ2TTHAtAD3t4qA==}
@@ -621,6 +630,10 @@ snapshots:
 
   '@types/estree@1.0.6': {}
 
+  '@types/node@22.13.10':
+    dependencies:
+      undici-types: 6.20.0
+
   acorn-walk@8.3.4:
     dependencies:
       acorn: 8.14.1
@@ -786,11 +799,13 @@ snapshots:
 
   typescript@5.8.2: {}
 
+  undici-types@6.20.0: {}
+
   valibot@1.0.0-rc.4(typescript@5.8.2):
     optionalDependencies:
       typescript: 5.8.2
 
-  vite-plugin-monkey@5.0.8(vite@6.2.1):
+  vite-plugin-monkey@5.0.8(vite@6.2.1(@types/node@22.13.10)):
     dependencies:
       acorn-walk: 8.3.4
       cross-spawn: 7.0.6
@@ -802,14 +817,15 @@ snapshots:
       picocolors: 1.1.1
       systemjs: 6.15.1
     optionalDependencies:
-      vite: 6.2.1
+      vite: 6.2.1(@types/node@22.13.10)
 
-  vite@6.2.1:
+  vite@6.2.1(@types/node@22.13.10):
     dependencies:
       esbuild: 0.25.1
       postcss: 8.5.3
       rollup: 4.35.0
     optionalDependencies:
+      '@types/node': 22.13.10
       fsevents: 2.3.3
 
   which@2.0.2:

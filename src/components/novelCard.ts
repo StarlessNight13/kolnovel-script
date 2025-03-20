@@ -1,3 +1,4 @@
+import { SITE_CONFIGS } from "@/config";
 import {
   Book,
   BookOpenCheck,
@@ -5,19 +6,17 @@ import {
   createElement,
   EyeClosed,
 } from "lucide";
+import { db, Novels } from "../db";
 import { Create } from "./creat-element";
-import { Novels, db } from "../db";
 
 export class NovelComponent {
   private container: HTMLElement;
   private novel: Novels;
-  private novelPath: string;
   private novelCard: HTMLDivElement;
 
-  constructor(containerId: string, novel: Novels, novelPath: string) {
-    this.container = document.getElementById(containerId) as HTMLElement;
+  constructor(container: HTMLElement, novel: Novels) {
+    this.container = container;
     this.novel = novel;
-    this.novelPath = novelPath;
     // Create the card container
     this.novelCard = Create.div({
       className: "novel-card",
@@ -44,7 +43,7 @@ export class NovelComponent {
     // Image container
     const imageContainer = Create.a({
       className: "novel-image-container",
-      href: this.novelPath + this.novel.uri,
+      href: SITE_CONFIGS.novelPath + this.novel.uri,
     });
 
     const image = document.createElement("img");
@@ -59,7 +58,7 @@ export class NovelComponent {
     });
 
     const titleLink = Create.a({
-      href: this.novelPath + this.novel.uri,
+      href: SITE_CONFIGS.novelPath + this.novel.uri,
     });
 
     const title = document.createElement("h4");
@@ -162,7 +161,7 @@ export class NovelComponent {
 
     // Continue reading button
     const button = Create.a({
-      href: unFinishedChapter?.link ?? this.novelPath + this.novel.uri,
+      href: unFinishedChapter?.link ?? SITE_CONFIGS.novelPath + this.novel.uri,
       className: "endless-button",
       textContent: unFinishedChapter ? "استمر في القراءة" : "ابدأ القراءة",
     });
