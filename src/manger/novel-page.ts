@@ -1,6 +1,7 @@
 import { Create } from "@/components/creat-element";
 import { NotificationManager } from "@/components/Notification";
 import { db } from "@/db";
+import { api, Novel as NovelAPI } from "@/lib/API";
 import { Book, Minus, Plus, createElement } from "lucide";
 
 // Type definitions
@@ -89,7 +90,7 @@ const LIBRARY_BUTTONS = [
 export class NovelPageManager {
   private buttonContainer: HTMLDivElement | null = null;
   private infoContent: HTMLDivElement | null = null;
-
+  private novelData: NovelAPI | null = null;
   private selectors = {
     novelTitle: "article > div.sertobig > div > div.sertoinfo > h1",
     novelCover: "article > div.sertobig > div > div.sertothumb > img",
@@ -101,6 +102,7 @@ export class NovelPageManager {
    * Initialize the novel library management page
    */
   public async init(): Promise<void> {
+    await this.getNovelDataFromUrl()
     this.createPageElements();
     await this.updateNovelStatus();
     this.showButtonContainer();
@@ -196,7 +198,6 @@ export class NovelPageManager {
    * Extract novel details from the current page
    */
   private extractNovelDetails(): NovelData {
-    const novelId = this.getNovelIdFromUrl();
     const novelName =
       this.getElementText(this.selectors.novelTitle) ?? "Unknown";
     const novelCover =
@@ -207,7 +208,7 @@ export class NovelPageManager {
 
     return {
       name: novelName,
-      uri: novelId,
+      uri: this.novelData?.slug ?? this.getNovelSlugFromUrl(),
       cover: novelCover,
       novelChapters: chaptersCount,
     };
@@ -216,9 +217,27 @@ export class NovelPageManager {
   /**
    * Get novel ID from the current URL
    */
-  private getNovelIdFromUrl(): string {
+  private async getNovelDataFromUrl() {
+    const slug = window.location.pathname.split("/")[2];
+    const novelData = await api.getNovelbySlug(slug)
+    if (!novelData) return null;
+    this.novelData = novelData;
+    return {
+      id: novelData.id,
+      link: novelData.link,
+    };
+  }
+
+  /**
+   * Get novel slug from the current URL
+   */
+  private getNovelSlugFromUrl() {
     return window.location.pathname.split("/")[2];
   }
+
+
+
+
 
   /**
    * Get text content from an element
@@ -248,8 +267,7 @@ export class NovelPageManager {
   private async updateNovelStatus(): Promise<void> {
     if (!this.buttonContainer || !this.infoContent) return;
 
-    const novelId = this.getNovelIdFromUrl();
-    const indexed = await db.novels.where({ uri: novelId }).first();
+    const indexed = await db.novels.where({ id: this.novelData?.id }).first();
 
     if (indexed) {
       this.buttonContainer.setAttribute("data-indexed", "true");
@@ -315,6 +333,7 @@ export class NovelPageManager {
       uri: novel.uri,
       name: novel.name,
       cover: novel.cover,
+      id: this.novelData?.id,
     };
 
     await db.novels.add(newNovel);

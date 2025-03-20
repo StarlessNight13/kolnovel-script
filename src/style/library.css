@@ -41,6 +41,10 @@
     padding: 5px;
   }
 
+  .novel-card[has-updates="true"] {
+    border: 1px solid var(--primary);
+  }
+
   .novel-image-container {
     position: relative;
     aspect-ratio: 2/3;

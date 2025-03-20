@@ -6,7 +6,7 @@ import {
   createElement,
   EyeClosed,
 } from "lucide";
-import { db, Novels } from "../db";
+import { Chapter, db, Novels } from "../db";
 import { Create } from "./creat-element";
 
 export class NovelComponent {
@@ -14,7 +14,7 @@ export class NovelComponent {
   private novel: Novels;
   private novelCard: HTMLDivElement;
 
-  constructor(container: HTMLElement, novel: Novels) {
+  constructor(container: HTMLElement, novel: Novels, hasUpdates?: boolean) {
     this.container = container;
     this.novel = novel;
     // Create the card container
@@ -22,6 +22,7 @@ export class NovelComponent {
       className: "novel-card",
       id: this.novel.id.toString(),
       attributes: {
+        "has-updates": hasUpdates?.toString() ?? "false",
         "data-novel-id": this.novel.id.toString(),
       },
     });
@@ -35,10 +36,19 @@ export class NovelComponent {
 
     const readChaptersCount = novelChapters.length;
 
+    let newestChapter: Chapter = novelChapters[0]; // Initialize with the first item
+
+    for (let i = 1; i < novelChapters.length; i++) {
+      if (novelChapters[i].lastRead > newestChapter.lastRead) {
+        newestChapter = novelChapters[i]; // Update newestItem if a newer item is found
+      }
+    }
+
     // find the first chapter that is not read
     const unFinishedChapter = novelChapters.find(
       (chapter) => chapter.readingCompletion < 100
     );
+
 
     // Image container
     const imageContainer = Create.a({
@@ -60,6 +70,8 @@ export class NovelComponent {
     const titleLink = Create.a({
       href: SITE_CONFIGS.novelPath + this.novel.uri,
     });
+
+
 
     const title = document.createElement("h4");
     title.className =
@@ -133,27 +145,31 @@ export class NovelComponent {
               }),
             ],
           }),
-          Create.div({
-            className: "novel-info-item",
-            children: [
-              Create.span({
-                children: createElement(Calendar),
-              }),
-              Create.span({
-                className: "truncate",
-                textContent: `${unFinishedChapter.lastRead.toLocaleDateString()}`,
-                attributes: {
-                  style: "margin-inline: 5px",
-                },
-              }),
-            ],
-          }),
         ],
       });
 
       // append last read div
       cardContent.appendChild(lastReadDiv);
     }
+
+    cardContent.appendChild(
+      Create.div({
+        className: "novel-info-item",
+        children: [
+          Create.span({
+            children: createElement(Calendar),
+          }),
+          Create.span({
+            className: "truncate",
+            textContent: `${newestChapter?.lastRead.toLocaleDateString()}`,
+            attributes: {
+              style: "margin-inline: 5px",
+            },
+          }),
+        ],
+      }),
+    )
+
     // Card footer
     const cardFooter = Create.div({
       className: "novel-card-footer",

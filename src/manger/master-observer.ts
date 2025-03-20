@@ -309,8 +309,21 @@ export class MasterObserver {
 
     // Load next chapter when we're 60% through the current one
     if (scrollPercentage > 60 && !this.fetching) {
+      this.updateChapter(100)
       await this.loadNextChapter();
     }
+  };
+
+  private async updateChapter(percentage: number) {
+    if (!this.chapterData || !this.novelData) return;
+    await db.chapters.add({
+      lastRead: new Date(),
+      link: this.chapterData.link,
+      novelId: this.novelData.id,
+      readingCompletion: percentage,
+      title: this.chapterData?.title,
+      id: this.chapterData?.id
+    })
   };
 
   /**
@@ -374,6 +387,8 @@ export class MasterObserver {
 
     // remove loading indicator
     this.fetching = false;
+
+    this.updateChapter(0)
   }
 
   /**
