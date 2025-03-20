@@ -152,23 +152,26 @@ export class NovelComponent {
       cardContent.appendChild(lastReadDiv);
     }
 
-    cardContent.appendChild(
-      Create.div({
-        className: "novel-info-item",
-        children: [
-          Create.span({
-            children: createElement(Calendar),
-          }),
-          Create.span({
-            className: "truncate",
-            textContent: `${newestChapter?.lastRead.toLocaleDateString()}`,
-            attributes: {
-              style: "margin-inline: 5px",
-            },
-          }),
-        ],
-      }),
-    )
+
+    if (newestChapter) {
+      cardContent.appendChild(
+        Create.div({
+          className: "novel-info-item",
+          children: [
+            Create.span({
+              children: createElement(Calendar),
+            }),
+            Create.span({
+              className: "truncate",
+              textContent: `${newestChapter.lastRead.toLocaleDateString()}`,
+              attributes: {
+                style: "margin-inline: 5px",
+              },
+            }),
+          ],
+        }),
+      )
+    }
 
     // Card footer
     const cardFooter = Create.div({
