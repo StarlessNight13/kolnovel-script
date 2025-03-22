@@ -13,6 +13,8 @@ enum NovelStatus {
     PLAN_TO_READ = "planToRead",
 }
 
+
+
 // Type definitions for novel grouping
 interface NovelGroup {
     text: string;
@@ -73,7 +75,6 @@ export class LibraryManager {
      */
     private async initialize(): Promise<void> {
         this.container.appendChild(this.createUserSettings());
-        await this.loadNovels();
         this.renderNovelGroups();
     }
 
@@ -168,7 +169,6 @@ export class LibraryManager {
             this.displayUpdateNotifications(updates.length, noUpdates.length);
 
             if (updates.length > 0) {
-                await this.loadNovels();
                 this.renderNovelGroups(updates);
             }
         } catch (error) {
@@ -267,10 +267,15 @@ export class LibraryManager {
         return { updates, noUpdates };
     }
 
+
+
+
     /**
      * Renders novel groups in the UI
      */
-    private renderNovelGroups(updates?: number[]): void {
+    private async renderNovelGroups(updates?: number[]): Promise<void> {
+        console.log("Rendering novel groups")
+        await this.loadNovels();
         // Clear existing novel groups (except settings)
         const settingsElement = this.container.querySelector(".settings");
         this.container.innerHTML = "";
@@ -310,7 +315,9 @@ export class LibraryManager {
 
         // Render each novel in the group
         group.novels.forEach((novel) => {
-            new NovelComponent(novelsContainer, novel, updates?.includes(novel.id));
+            new NovelComponent(novelsContainer, novel,
+                this.renderNovelGroups.bind(this, updates),
+                updates?.includes(novel.id));
         });
 
         return groupContainer;

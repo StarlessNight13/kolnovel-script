@@ -9,14 +9,40 @@ import {
 import { Chapter, db, Novels } from "../db";
 import { Create } from "./creat-element";
 
+// Enums for novel status types
+
+const NovelStatus = {
+  READING: {
+    text: "أقرا حاليا",
+    value: "reading",
+  },
+  COMPLETED: {
+    text: "اكملتها",
+    value: "completed",
+  },
+  DROPPED: {
+    text: "مسحوب عليها",
+    value: "dropped",
+  },
+  PLAN_TO_READ: {
+    text: "أقرا لاحقا",
+    value: "planToRead",
+  },
+} as const;
+
+
+
+
 export class NovelComponent {
   private container: HTMLElement;
   private novel: Novels;
   private novelCard: HTMLDivElement;
+  private reRender: () => Promise<void>;
 
-  constructor(container: HTMLElement, novel: Novels, hasUpdates?: boolean) {
+  constructor(container: HTMLElement, novel: Novels, reRender: () => Promise<void>, hasUpdates?: boolean,) {
     this.container = container;
     this.novel = novel;
+    this.reRender = reRender;
     // Create the card container
     this.novelCard = Create.div({
       className: "novel-card",
@@ -69,13 +95,13 @@ export class NovelComponent {
 
     const titleLink = Create.a({
       href: SITE_CONFIGS.novelPath + this.novel.uri,
+      className: "endless-link",
     });
 
 
 
     const title = document.createElement("h4");
-    title.className =
-      "tw:scroll-m-20 tw:text-xl tw:font-semibold tw:tracking-tight tw:first:mt-0 tw:text-center tw:truncate";
+    title.className = "novel-title truncate";
     title.textContent = this.novel.name;
     titleLink.appendChild(title);
     cardHeader.appendChild(titleLink);
@@ -179,12 +205,36 @@ export class NovelComponent {
     });
 
     // Continue reading button
-    const button = Create.a({
+    cardFooter.appendChild(Create.a({
       href: unFinishedChapter?.link ?? SITE_CONFIGS.novelPath + this.novel.uri,
       className: "endless-button",
       textContent: unFinishedChapter ? "استمر في القراءة" : "ابدأ القراءة",
+    }));
+
+    // Change novel status Select element
+
+    const options = Object.keys(NovelStatus).map((e) => ({
+      value: e,
+      text: NovelStatus[e as keyof typeof NovelStatus].text,
+      selected: this.novel.status === NovelStatus[e as keyof typeof NovelStatus].value,
+    }));
+
+    const novelStatusSelect = Create.select({
+      options: options,
+      clickFunc: (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const select = e.target as HTMLSelectElement;
+        if (select.value in NovelStatus) {
+          const status = select.value as keyof typeof NovelStatus;
+          this.updateNovelStatus({ status });
+        }
+      }
     });
-    cardFooter.appendChild(button);
+
+
+
+    cardFooter.appendChild(novelStatusSelect.wrapper);
 
     // Delete novel button
     const deleteButton = document.createElement("button");
@@ -202,6 +252,11 @@ export class NovelComponent {
 
     // Add to container
     this.container.appendChild(this.novelCard);
+  }
+
+  private async updateNovelStatus({ status }: { status: keyof typeof NovelStatus }) {
+    await db.novels.update(this.novel.id, { status: NovelStatus[status as keyof typeof NovelStatus].value });
+    await this.reRender();
   }
 
   private async deleteNovel() {

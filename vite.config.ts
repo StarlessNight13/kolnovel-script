@@ -22,6 +22,7 @@ export default defineConfig({
           "https://github.com/StarlessNight13/kolnovel-script/releases/latest/download/kolnovel.user.js",
       },
     }),
+
   ],
   resolve: {
     alias: {

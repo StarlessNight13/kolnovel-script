@@ -19,6 +19,11 @@ interface ButtonElementProps extends BaseElementProps {
   icon?: Element;
 }
 
+interface SelectElementProps extends BaseElementProps {
+  options?: { value: string; text: string, selected?: boolean }[];
+  clickFunc?: (e: Event) => void;
+}
+
 interface AnchorElementProps extends BaseElementProps {
   href?: string;
 }
@@ -81,6 +86,41 @@ export const Create = {
     }
 
     return element;
+  },
+
+  // Select element
+  select(props: SelectElementProps): {
+    wrapper: HTMLDivElement;
+    select: HTMLSelectElement;
+  } {
+    const selectWrapper = this.element<HTMLDivElement>("div", {
+      className: "select-wrapper",
+    });
+    const select = this.element<HTMLSelectElement>("select", props);
+
+    // Apply options
+    if (props.options) {
+      props.options.forEach((option) => {
+        select.add(new Option(option.text, option.value, option.selected, option.selected));
+      });
+    }
+
+    // Add click event listener
+    if (props.clickFunc) {
+      props.clickFunc.bind(select);
+      select.addEventListener("change", props.clickFunc);
+    }
+
+
+    // Add default class
+    select.classList.add("w-select");
+
+    selectWrapper.appendChild(select);
+
+    return {
+      wrapper: selectWrapper,
+      select: select,
+    };
   },
 
   /**
