@@ -220,7 +220,7 @@ export class LibraryManager {
         novel: Novels
     ): Promise<NovelUpdateResult> {
         try {
-            const latestNovelData = await api.getNovelbyChapterId(Number(novel.id));
+            const latestNovelData = await api.getNovel(Number(novel.id));
             if (!latestNovelData) return { id: novel.id, hasUpdates: false };
             const hasUpdates = latestNovelData.count !== novel.chaptersCount;
 
