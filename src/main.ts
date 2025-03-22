@@ -24,8 +24,7 @@ import "./style/index.css";
   } else if (currentPage === "page") {
     document.body.classList.add("novelPage");
 
-    const manager = new NovelPageManager();
-    await manager.init();
+    new NovelPageManager();
   } else {
     document.body.classList.add("otherPage");
   }

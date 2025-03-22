@@ -264,3 +264,126 @@ input[type="checkbox"]:checked + .endless-toggle {
   background-color: var(--ctp-base);
   color: var(--ctp-text);
 }
+
+.drop-down-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  .DropDownMenu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: 1px solid var(--ctp-surface1);
+    border-radius: 0.25rem;
+    color: var(--ctp-text);
+    outline: none;
+    &:hover {
+      background-color: var(--ctp-surface0);
+    }
+    &:active {
+      background-color: var(--ctp-surface1);
+    }
+  }
+}
+
+.dropdown-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+
+  .dropdown-arrow {
+    position: relative;
+    top: 2px;
+    font-size: 1.3rem;
+    transition: transform 0.3s ease;
+  }
+
+  .dropdown-lable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    &:hover {
+      color: var(--ctp-blue);
+    }
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    min-width: 120px;
+    flex-direction: column;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 0 5px -1px rgba(var(--ctp-red-rgb), 0.5);
+    background: var(--ctp-base);
+    transform-origin: top left;
+
+    .dropdown-option {
+      padding: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: space-between;
+      text-overflow: ellipsis;
+      flex-grow: 1;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      transition: background 0.3s ease;
+    }
+    .dropdown-option:hover {
+      background-color: var(--ctp-surface0);
+    }
+
+    .dropdown-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-overflow: ellipsis;
+      gap: 0.5rem;
+      padding: 10px;
+      flex-grow: 1;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+  }
+
+  .dropdown-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .dropdown-menu span:hover {
+    background: var(--ctp-surface0);
+  }
+
+  .dropdown-toggle:checked + .dropdown-label + .dropdown-menu {
+    display: flex;
+    animation: openDropDown 0.4s ease 0s 1 forwards;
+  }
+  .dropdown-toggle:checked + .dropdown-arrow {
+    transform: rotate(-180deg);
+  }
+}
+
+@keyframes openDropDown {
+  from {
+    transform: scale(0.9);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}

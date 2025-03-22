@@ -1,9 +1,10 @@
 import { Bot, createElement } from "lucide";
 
+// Type definitions
 type ElementVariant = "destructive" | "muted" | "outline";
 type ElementChild = Element | HTMLElement | SVGElement;
 
-// Base interface for all element creation functions
+// Base interface for element properties
 interface BaseElementProps {
   className?: string | string[];
   id?: string;
@@ -11,6 +12,7 @@ interface BaseElementProps {
   variant?: ElementVariant;
   children?: ElementChild | ElementChild[];
   attributes?: Record<string, string>;
+  innerHTML?: string;
 }
 
 // Extended interfaces for specific element types
@@ -28,10 +30,35 @@ interface AnchorElementProps extends BaseElementProps {
   href?: string;
 }
 
-interface DivElementProps extends BaseElementProps {
-  innerHTML?: string;
+interface InputElementProps extends BaseElementProps {
+  type?: string;
+  value?: string;
+  placeholder?: string;
+  name?: string;
 }
 
+interface RangeSelectorProps extends BaseElementProps {
+  min: number;
+  max: number;
+  value?: number;
+}
+
+interface DropDownMenuProps extends BaseElementProps {
+  label: string;
+  icon?: Element;
+  withArrow?: boolean;
+  iconOnly?: boolean;
+  options: {
+    value: string;
+    text: string;
+    icon?: Element;
+    clickFunc?: (e: Event) => void | Promise<void>;
+  }[];
+}
+
+/**
+ * Utility for creating DOM elements with a fluent API
+ */
 export const Create = {
   /**
    * Creates and configures an HTML element with common properties
@@ -39,7 +66,7 @@ export const Create = {
    * @param props - Configuration properties
    * @returns Configured HTML element
    */
-  element<T extends HTMLElement>(tagName: string, props: BaseElementProps): T {
+  element<T extends HTMLElement>(tagName: string, props: BaseElementProps = {}): T {
     const element = document.createElement(tagName) as T;
 
     // Apply text content if provided
@@ -50,7 +77,7 @@ export const Create = {
     // Apply class names
     if (props.className) {
       if (Array.isArray(props.className)) {
-        props.className.forEach((cls) => element.classList.add(cls));
+        element.classList.add(...props.className);
       } else {
         element.className = props.className;
       }
@@ -59,6 +86,11 @@ export const Create = {
     // Apply ID if provided
     if (props.id) {
       element.id = props.id;
+    }
+
+    // Apply innerHTML if provided
+    if (props.innerHTML) {
+      element.innerHTML = props.innerHTML;
     }
 
     // Apply variant as data attribute
@@ -78,6 +110,7 @@ export const Create = {
       const childrenArray = Array.isArray(props.children)
         ? props.children
         : [props.children];
+
       childrenArray.forEach((child) => {
         if (child instanceof Element) {
           element.appendChild(child);
@@ -88,7 +121,34 @@ export const Create = {
     return element;
   },
 
-  // Select element
+  /**
+   * Creates an input element
+   */
+  input(props: InputElementProps): HTMLInputElement {
+    const input = this.element<HTMLInputElement>("input", props);
+
+    if (props.type) {
+      input.type = props.type;
+    }
+
+    if (props.value) {
+      input.value = props.value;
+    }
+
+    if (props.placeholder) {
+      input.placeholder = props.placeholder;
+    }
+
+    if (props.name) {
+      input.name = props.name;
+    }
+
+    return input;
+  },
+
+  /**
+   * Creates a select element with a wrapper
+   */
   select(props: SelectElementProps): {
     wrapper: HTMLDivElement;
     select: HTMLSelectElement;
@@ -96,24 +156,24 @@ export const Create = {
     const selectWrapper = this.element<HTMLDivElement>("div", {
       className: "select-wrapper",
     });
-    const select = this.element<HTMLSelectElement>("select", props);
+
+    const select = this.element<HTMLSelectElement>("select", {
+      ...props,
+      className: (Array.isArray(props.className) ? props.className.join(" ") : [props.className || ""]) + " w-select"
+    });
 
     // Apply options
     if (props.options) {
       props.options.forEach((option) => {
-        select.add(new Option(option.text, option.value, option.selected, option.selected));
+        const optElement = new Option(option.text, option.value, option.selected, option.selected);
+        select.add(optElement);
       });
     }
 
     // Add click event listener
     if (props.clickFunc) {
-      props.clickFunc.bind(select);
       select.addEventListener("change", props.clickFunc);
     }
-
-
-    // Add default class
-    select.classList.add("w-select");
 
     selectWrapper.appendChild(select);
 
@@ -135,12 +195,9 @@ export const Create = {
     }
 
     // Add icon if provided
-    if (props.icon) {
+    if (props.icon && !props.children) {
       button.appendChild(props.icon);
     }
-
-    // Add default class
-    button.classList.add("endless-button");
 
     return button;
   },
@@ -148,15 +205,8 @@ export const Create = {
   /**
    * Creates a div element
    */
-  div(props: DivElementProps): HTMLDivElement {
-    const div = this.element<HTMLDivElement>("div", props);
-
-    // Apply innerHTML if provided
-    if (props.innerHTML) {
-      div.innerHTML = props.innerHTML;
-    }
-
-    return div;
+  div(props: BaseElementProps = {}): HTMLDivElement {
+    return this.element<HTMLDivElement>("div", props);
   },
 
   /**
@@ -174,45 +224,208 @@ export const Create = {
   },
 
   /**
-   * Creates a span element
-   */
-  span(props: BaseElementProps): HTMLSpanElement {
-    return this.element<HTMLSpanElement>("span", props);
-  },
-
-  /**
    * Creates a toggle control
    */
-  toogle() {
+  toggle(id = "toggle", label = "Toggle"): {
+    container: HTMLDivElement;
+    input: HTMLInputElement;
+    label: HTMLLabelElement;
+  } {
     const toggleContainer = this.div({
       className: "toggle-container",
-      id: "toggle-container",
     });
 
-    const input = this.element<HTMLInputElement>("input", {
-      id: "auto-loader-toggle",
+    const input = this.input({
+      id,
       className: "hidden",
       attributes: { type: "checkbox" },
     });
 
-    const label = this.element<HTMLLabelElement>("label", {
-      textContent: "Auto Loader",
+    const lableElement = this.element<HTMLLabelElement>("label", {
+      textContent: label,
       className: "endless-toggle",
-      attributes: { for: "auto-loader-toggle" },
+      attributes: { for: id },
     });
 
     // Add Bot icon to label
-    const bot = createElement(Bot);
-    label.appendChild(bot);
+
+    lableElement.appendChild(
+      createElement(Bot)
+    );
 
     // Assemble the toggle
     toggleContainer.appendChild(input);
-    toggleContainer.appendChild(label);
+    toggleContainer.appendChild(lableElement);
 
     return {
       container: toggleContainer,
       input,
-      label,
+      label: lableElement,
     };
+  },
+
+  /**
+   * Creates a range selector with label and value display
+   */
+  rangeSelector(props: RangeSelectorProps): HTMLDivElement {
+    const value = props.value ?? props.min;
+
+    const rangeSelector = this.div({
+      className: "range-selector",
+    });
+
+    const label = this.element<HTMLLabelElement>("label", {
+      className: "range-label",
+      textContent: "Select Range:",
+    });
+
+    const rangeControls = this.div({
+      className: "range-controls",
+      children: [
+        this.element<HTMLSpanElement>("span", {
+          className: "range-min-label",
+          textContent: `Min: ${props.min}`,
+        }),
+        this.element<HTMLSpanElement>("span", {
+          className: "range-max-label",
+          textContent: `Max: ${props.max}`,
+        }),
+      ]
+    });
+
+    const range = this.input({
+      className: "range-input",
+      attributes: {
+        type: "range",
+        min: props.min.toString(),
+        max: props.max.toString(),
+        value: value.toString(),
+      }
+    });
+
+    const valueDisplay = this.element<HTMLSpanElement>("span", {
+      className: "range-value",
+      textContent: value.toString(),
+    });
+
+    // Event handling for updating the displayed value
+    range.addEventListener('input', function () {
+      valueDisplay.textContent = this.value;
+    });
+
+    rangeSelector.appendChild(label);
+    rangeSelector.appendChild(rangeControls);
+    rangeSelector.appendChild(range);
+    rangeSelector.appendChild(valueDisplay);
+
+    return rangeSelector;
+  },
+
+  /**
+   * Creates a dropdown menu using CSS and checkbox for toggle
+   */
+  dropDownMenu(props: DropDownMenuProps): HTMLDivElement {
+    // Generate a unique ID for the checkbox
+    const dropdownId = `dropdown-${Math.random().toString(36).substring(2, 9)}`;
+
+    // Create container with proper CSS classes
+    const dropdownContainer = this.div({
+      className: "dropdown-container " + (props.variant ? `dropdown-${props.variant}` : ""),
+    });
+
+    // Create hidden checkbox for toggling
+    const dropdownToggle = this.input({
+      id: dropdownId,
+      className: "dropdown-toggle",
+      attributes: {
+        type: "checkbox",
+      }
+    });
+
+    // Style the checkbox to be hidden but still accessible
+    dropdownToggle.style.position = "absolute";
+    dropdownToggle.style.opacity = "0";
+    dropdownToggle.style.height = "0";
+    dropdownToggle.style.width = "0";
+
+    // Create the dropdown trigger label
+    const dropdownLabel = this.element<HTMLLabelElement>("label", {
+      className: "dropdown-label",
+      attributes: {
+        for: dropdownId,
+      },
+    });
+
+    // Add icon or text to the label
+    if (props.icon) {
+      dropdownLabel.appendChild(props.icon);
+    }
+
+    // Add label text if not icon-only
+    if (!props.iconOnly) {
+      dropdownLabel.appendChild(
+        this.element<HTMLSpanElement>("span", {
+          className: "dropdown-text",
+          textContent: props.label,
+        })
+      );
+    }
+
+    // Add arrow if specified
+    if (props.withArrow) {
+      dropdownLabel.appendChild(
+        this.element<HTMLSpanElement>("span", {
+          className: "dropdown-arrow",
+          textContent: "▾",
+        })
+      );
+    }
+
+    // Create dropdown menu content
+    const dropdownMenu = this.div({
+      className: "dropdown-menu",
+    });
+
+    // Add options to the dropdown menu
+    props.options.forEach(option => {
+      const optionElement = this.div({
+        className: "dropdown-option",
+        attributes: {
+          "data-value": option.value,
+        },
+      });
+
+      // Add icon if provided
+      if (option.icon) {
+        optionElement.appendChild(option.icon);
+      }
+
+      // Add text if not icon-only
+      optionElement.appendChild(
+        this.element<HTMLSpanElement>("span", {
+          textContent: option.text,
+        })
+      );
+
+
+      // Add click event listener if provided
+      if (option.clickFunc) {
+        optionElement.addEventListener("click", (e) => {
+          // Close dropdown after selection
+          dropdownToggle.checked = false;
+          option.clickFunc!(e);
+        });
+      }
+
+      dropdownMenu.appendChild(optionElement);
+    });
+
+
+    // Assemble the dropdown
+    dropdownContainer.appendChild(dropdownToggle);
+    dropdownContainer.appendChild(dropdownLabel);
+    dropdownContainer.appendChild(dropdownMenu);
+
+    return dropdownContainer;
   },
 };

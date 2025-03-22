@@ -60,7 +60,7 @@ export class NovelComponent {
       .where({ novelId: this.novel.id })
       .toArray();
 
-    const readChaptersCount = novelChapters.length;
+    const novelChaptersCount = novelChapters.length;
 
     let newestChapter: Chapter = novelChapters[0]; // Initialize with the first item
 
@@ -69,6 +69,8 @@ export class NovelComponent {
         newestChapter = novelChapters[i]; // Update newestItem if a newer item is found
       }
     }
+
+    const readChapters = novelChapters.filter(chapter => chapter.readingCompletion === 100);
 
     // find the first chapter that is not read
     const unFinishedChapter = novelChapters.find(
@@ -115,10 +117,10 @@ export class NovelComponent {
     const chaptersDiv = Create.div({
       className: "novel-info-item",
       children: [
-        Create.span({
+        Create.element<HTMLSpanElement>("span", {
           children: createElement(Book),
         }),
-        Create.span({
+        Create.element<HTMLSpanElement>("span", {
           className: "truncate",
           textContent: `${this.novel.chaptersCount} فصلاً`,
           attributes: {
@@ -131,17 +133,17 @@ export class NovelComponent {
     // append chapters div
     cardContent.appendChild(chaptersDiv);
 
-    // Latest chapter badge
-    if (readChaptersCount > 0) {
+    // Latest chapter badge 
+    if (readChapters.length > 0) {
       const badgeContainer = Create.div({
         className: "novel-info-item",
         children: [
-          Create.span({
+          Create.element<HTMLSpanElement>("span", {
             children: createElement(BookOpenCheck),
           }),
-          Create.span({
+          Create.element<HTMLSpanElement>("span", {
             className: "truncate",
-            textContent: `قرات ${readChaptersCount} من ${this.novel.chaptersCount}`,
+            textContent: `قرات ${readChapters.length} من ${novelChaptersCount}`,
             attributes: {
               style: "margin-inline: 5px",
             },
@@ -159,10 +161,10 @@ export class NovelComponent {
           Create.div({
             className: "novel-info-item",
             children: [
-              Create.span({
+              Create.element<HTMLSpanElement>("span", {
                 children: createElement(EyeClosed),
               }),
-              Create.span({
+              Create.element<HTMLSpanElement>("span", {
                 className: "truncate",
                 textContent: unFinishedChapter.title,
                 attributes: {
@@ -184,10 +186,10 @@ export class NovelComponent {
         Create.div({
           className: "novel-info-item",
           children: [
-            Create.span({
+            Create.element<HTMLSpanElement>("span", {
               children: createElement(Calendar),
             }),
-            Create.span({
+            Create.element<HTMLSpanElement>("span", {
               className: "truncate",
               textContent: `${newestChapter.lastRead.toLocaleDateString()}`,
               attributes: {

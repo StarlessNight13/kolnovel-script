@@ -92,7 +92,7 @@ export class MasterObserver {
    * Create and inject settings UI
    */
   private createSettingsUI(): void {
-    const { container: toggleContainer, input: toggleInput } = Create.toogle();
+    const { container: toggleContainer, input: toggleInput } = Create.toggle();
 
     toggleInput.checked = this.settings.autoLoader;
     toggleInput.addEventListener("change", () => {
@@ -111,7 +111,7 @@ export class MasterObserver {
       className: "styles-container",
       children: [
         Create.button({
-          className: "bold-button",
+          className: "bold-button endless-button",
           textContent: "Bold",
           attributes: {
             "data-variant": "muted",
@@ -128,7 +128,7 @@ export class MasterObserver {
           icon: createElement(Bold),
         }),
         Create.button({
-          className: "italic-button",
+          className: "italic-button endless-button",
           textContent: "Italic",
           attributes: {
             "data-variant": "muted",
@@ -489,7 +489,7 @@ export class MasterObserver {
         Create.a({
           href: chapterUrl,
           textContent: title,
-          className: "chapter-options-link endless-link",
+          className: "chapter-options-link endless-button",
           attributes: {
             "data-variant": "outline",
             disabled: chapterUrl ? "false" : "true",
@@ -499,7 +499,7 @@ export class MasterObserver {
         Create.a({
           href: "/series/" + this.novelData?.slug,
           textContent: this.novelData?.name,
-          className: "chapter-options-link endless-link",
+          className: "chapter-options-link endless-button",
           attributes: {
             "data-variant": "outline",
           },
@@ -508,7 +508,7 @@ export class MasterObserver {
         Create.a({
           href: SITE_CONFIGS.libLink,
           textContent: "Library",
-          className: "chapter-options-link endless-link",
+          className: "chapter-options-link endless-button",
           children: createElement(Book),
           attributes: {
             "data-variant": "outline",

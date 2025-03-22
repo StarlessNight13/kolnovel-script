@@ -102,7 +102,7 @@ export class LibraryManager {
      * Creates the auto-loader toggle UI component
      */
     private createAutoLoaderToggle(): HTMLDivElement {
-        const { container: toggleContainer, input: toggleInput } = Create.toogle();
+        const { container: toggleContainer, input: toggleInput } = Create.toggle();
 
         const savedSetting = localStorage.getItem("autoLoaderState") === "true";
         toggleInput.checked = savedSetting;
@@ -143,6 +143,7 @@ export class LibraryManager {
                                 Create.button({
                                     id: "sync-btn",
                                     textContent: "البحث عن الفصول الجديدة",
+                                    className: "endless-button",
                                     icon: createElement(RefreshCcw),
                                     clickFunc: this.updateNovels.bind(this),
                                 }),
@@ -191,6 +192,7 @@ export class LibraryManager {
             NotificationManager.show({
                 message: `Successfully updated ${updatesCount} novels`,
                 variant: "success",
+                duration: 30,
             });
         }
 
@@ -198,6 +200,7 @@ export class LibraryManager {
             NotificationManager.show({
                 message: `No updates found for ${noUpdatesCount} novels`,
                 variant: "info",
+                duration: 30,
             });
         }
     }
