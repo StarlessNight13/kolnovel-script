@@ -43,6 +43,9 @@ export class MasterObserver {
   // Track displayed chapters
   private displayedChapters: HTMLElement[] = [];
   private maxDisplayedChapters: number = 3;
+  private lastChapter: boolean = false;
+  // Store bound event handlers for proper cleanup
+  private boundHandleScroll: (() => Promise<void>) | null = null;
 
   /**
    * Creates a new MasterObserver instance
@@ -162,13 +165,17 @@ export class MasterObserver {
 
     window.onbeforeunload = () => window.scrollTo(0, 0);
 
+    // Create bound method for event handlers to ensure proper removal
+    this.boundHandleScroll = this.handleScroll.bind(this);
+
     // Add scroll event listeners with debounce
-    const debouncedScroll = debounce(this.handleScroll, 300);
+    const debouncedScroll = debounce(this.boundHandleScroll, 300);
     window.addEventListener("scroll", debouncedScroll);
     window.addEventListener("resize", debouncedScroll);
 
     // Initial check
-    this.handleScroll();
+    this.boundHandleScroll();
+    console.log("MasterObserver initialized");
   }
 
   /**
@@ -185,7 +192,6 @@ export class MasterObserver {
       return;
     }
 
-
     const novel = await api.getNovelbyChapterId(Number(id));
     if (!novel) return;
 
@@ -195,7 +201,6 @@ export class MasterObserver {
       ...novel,
       saved: savedNovel,
     };
-
   }
 
   /**
@@ -204,14 +209,12 @@ export class MasterObserver {
   private async loadChaptersList(): Promise<void> {
     if (!this.novelData) return;
 
-
     const chapters = await api.getChaptersList(this.novelData.slug);
     if (!chapters) return;
     this.chapterList = chapters;
     this.currentChapterIndex = this.chapterList.findIndex(
       (chapter) => chapter.id === this.chapterData?.id
     );
-
   }
 
   /**
@@ -304,27 +307,40 @@ export class MasterObserver {
   /**
    * Scroll event handler for infinite loading
    */
-  private handleScroll = async (): Promise<void> => {
+  private async handleScroll(): Promise<void> {
+    if (this.lastChapter) return;
     const scrollPercentage = this.calculateScrollPercentage();
 
     // Load next chapter when we're 60% through the current one
     if (scrollPercentage > 60 && !this.fetching) {
-      this.updateChapter(100)
+      await this.updateChapter(100);
       await this.loadNextChapter();
     }
-  };
+  }
 
-  private async updateChapter(percentage: number) {
+  /**
+   * Update chapter progress in database
+   */
+  private async updateChapter(percentage: number): Promise<void> {
     if (!this.chapterData || !this.novelData) return;
-    await db.chapters.add({
+
+    const chapterData = {
       lastRead: new Date(),
       link: this.chapterData.link,
       novelId: this.novelData.id,
       readingCompletion: percentage,
-      title: this.chapterData?.title,
-      id: this.chapterData?.id
-    })
-  };
+      title: this.chapterData.title,
+      id: this.chapterData.id
+    };
+
+    const isSaved = await db.chapters.where({ id: this.chapterData.id }).first();
+
+    if (isSaved) {
+      await db.chapters.update(this.chapterData.id, chapterData);
+    } else {
+      await db.chapters.add(chapterData);
+    }
+  }
 
   /**
    * Calculate how much of the current chapter has been scrolled
@@ -358,13 +374,18 @@ export class MasterObserver {
   private async loadNextChapter(): Promise<void> {
     this.fetching = true;
 
-
     // Get next chapter in the list
     this.currentChapterIndex++;
     const nextChapterInfo = this.chapterList[this.currentChapterIndex];
 
     if (!nextChapterInfo) {
       this.fetching = false;
+      this.lastChapter = true;
+      NotificationManager.show({
+        message: "No more chapters to read",
+        variant: "info",
+      });
+      this.destroy();
       return;
     }
 
@@ -379,7 +400,8 @@ export class MasterObserver {
         variant: "error",
       });
       return;
-    };
+    }
+
     await this.createChapterElement(chapterData);
 
     // Remove old chapters if we have more than the maximum
@@ -388,7 +410,7 @@ export class MasterObserver {
     // remove loading indicator
     this.fetching = false;
 
-    this.updateChapter(0)
+    await this.updateChapter(0);
   }
 
   /**
@@ -590,13 +612,23 @@ export class MasterObserver {
       this.styleObserver = null;
     }
 
-    // Clean up scroll handlers
-    window.removeEventListener("scroll", this.handleScroll);
-    window.removeEventListener("resize", this.handleScroll);
+    // Clean up scroll handlers - fixed by using the bound handler reference
+    if (this.boundHandleScroll) {
+      window.removeEventListener("scroll", debounce(this.boundHandleScroll, 300));
+      window.removeEventListener("resize", debounce(this.boundHandleScroll, 300));
+      this.boundHandleScroll = null;
+    }
 
     // Clear element sets
     this.observedElements.clear();
     this.createdChapters.clear();
     this.displayedChapters = [];
+    this.lastChapter = true;
+    this.currentChapter = null;
+    this.chapterList = [];
+    this.currentChapterIndex = 0;
+    this.fetching = false;
+
+    console.log("MasterObserver destroyed");
   }
 }

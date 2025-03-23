@@ -56,6 +56,11 @@ interface DropDownMenuProps extends BaseElementProps {
   }[];
 }
 
+interface ProgressBarProps {
+  value: number;
+  maxValue: number;
+}
+
 /**
  * Utility for creating DOM elements with a fluent API
  */
@@ -262,6 +267,52 @@ export const Create = {
       input,
       label: lableElement,
     };
+  },
+
+  progressBar(props: ProgressBarProps): HTMLDivElement {
+    const { value, maxValue } = props;
+    if (maxValue === 0) return this.element<HTMLDivElement>("div", {
+      className: "progress-bar indeterminate",
+      attributes: {
+        value: "0",
+      },
+      children: [
+        this.element<HTMLSpanElement>("span", {
+          className: "progress-value",
+          attributes: {
+            style: `width: ${0}%`,
+          },
+        }),
+        this.element<HTMLSpanElement>("span", {
+          className: "progress-max",
+          attributes: {
+            style: `width: ${100}%`,
+          },
+        }),
+      ],
+    });
+    return this.element<HTMLDivElement>("div", {
+      className: "progress-bar",
+      attributes: {
+        "full": (value === maxValue).toString(),
+        value: value.toString(),
+        max: maxValue.toString(),
+      },
+      children: [
+        this.element<HTMLSpanElement>("span", {
+          className: "progress-value",
+          attributes: {
+            style: `width: ${Math.floor((value / maxValue) * 100)}%`,
+          },
+        }),
+        this.element<HTMLSpanElement>("span", {
+          className: "progress-max",
+          attributes: {
+            style: `width: ${100 - Math.floor((value / maxValue) * 100)}%`,
+          },
+        }),
+      ],
+    });
   },
 
   /**

@@ -90,14 +90,9 @@ export class NovelComponent {
     image.classList.add("novel-image");
     imageContainer.appendChild(image);
 
-    // Card header
-    const cardHeader = Create.div({
-      className: "novel-card-header",
-    });
-
     const titleLink = Create.a({
       href: SITE_CONFIGS.novelPath + this.novel.uri,
-      className: "endless-link",
+      className: "endless-link novel-title-link",
     });
 
 
@@ -106,111 +101,61 @@ export class NovelComponent {
     title.className = "novel-title truncate";
     title.textContent = this.novel.name;
     titleLink.appendChild(title);
-    cardHeader.appendChild(titleLink);
-
-    // Card content
-    const cardContent = Create.div({
-      className: "novel-card-content",
+    // Card header
+    const cardHeader = Create.div({
+      className: "novel-card-header",
+      children: [imageContainer, titleLink],
     });
+
 
     // Chapters info
-    const chaptersDiv = Create.div({
-      className: "novel-info-item",
-      children: [
-        Create.element<HTMLSpanElement>("span", {
-          children: createElement(Book),
-        }),
-        Create.element<HTMLSpanElement>("span", {
-          className: "truncate",
-          textContent: `${this.novel.chaptersCount} فصلاً`,
-          attributes: {
-            style: "margin-inline: 5px",
-          },
-        }),
-      ],
-    });
-
-    // append chapters div
-    cardContent.appendChild(chaptersDiv);
-
-    // Latest chapter badge 
     if (readChapters.length > 0) {
       const badgeContainer = Create.div({
-        className: "novel-info-item",
+        className: "novel-chapters-info read",
         children: [
           Create.element<HTMLSpanElement>("span", {
-            children: createElement(BookOpenCheck),
+            className: "all-chapters",
+            textContent: novelChaptersCount.toString(),
           }),
           Create.element<HTMLSpanElement>("span", {
-            className: "truncate",
-            textContent: `قرات ${readChapters.length} من ${novelChaptersCount}`,
-            attributes: {
-              style: "margin-inline: 5px",
-            },
+            className: "read-chapters",
+            textContent: readChapters.length.toString(),
           }),
         ],
       });
-      cardContent.appendChild(badgeContainer);
-    }
-
-    // Last read info
-    if (unFinishedChapter) {
-      const lastReadDiv = Create.div({
-        className: "tw:flex tw:flex-col tw:gap-1 tw:border-t tw:pt-5",
+      this.novelCard.appendChild(badgeContainer);
+    } else {
+      const badgeContainer = Create.div({
+        className: "novel-chapters-info",
         children: [
-          Create.div({
-            className: "novel-info-item",
-            children: [
-              Create.element<HTMLSpanElement>("span", {
-                children: createElement(EyeClosed),
-              }),
-              Create.element<HTMLSpanElement>("span", {
-                className: "truncate",
-                textContent: unFinishedChapter.title,
-                attributes: {
-                  style: "margin-inline: 5px",
-                },
-              }),
-            ],
+          Create.element<HTMLSpanElement>("span", {
+            className: "all-chapters",
+            textContent: novelChaptersCount.toString(),
           }),
         ],
       });
-
-      // append last read div
-      cardContent.appendChild(lastReadDiv);
+      this.novelCard.appendChild(badgeContainer);
     }
 
 
-    if (newestChapter) {
-      cardContent.appendChild(
-        Create.div({
-          className: "novel-info-item",
-          children: [
-            Create.element<HTMLSpanElement>("span", {
-              children: createElement(Calendar),
-            }),
-            Create.element<HTMLSpanElement>("span", {
-              className: "truncate",
-              textContent: `${newestChapter.lastRead.toLocaleDateString()}`,
-              attributes: {
-                style: "margin-inline: 5px",
-              },
-            }),
-          ],
-        }),
-      )
-    }
 
     // Card footer
     const cardFooter = Create.div({
       className: "novel-card-footer",
     });
 
+
+    // Novel progress bar
+    const novelProgressBar = Create.progressBar({
+      value: readChapters.length,
+      maxValue: novelChaptersCount,
+    });
+    cardFooter.appendChild(novelProgressBar);
     // Continue reading button
     cardFooter.appendChild(Create.a({
       href: unFinishedChapter?.link ?? SITE_CONFIGS.novelPath + this.novel.uri,
       className: "endless-button",
-      textContent: unFinishedChapter ? "استمر في القراءة" : "ابدأ القراءة",
+      textContent: unFinishedChapter ? "أكمل القراءة" : "ابدأ القراءة",
     }));
 
     // Change novel status Select element
@@ -247,9 +192,7 @@ export class NovelComponent {
     cardFooter.appendChild(deleteButton);
 
     // Assemble the card
-    this.novelCard.appendChild(imageContainer);
     this.novelCard.appendChild(cardHeader);
-    this.novelCard.appendChild(cardContent);
     this.novelCard.appendChild(cardFooter);
 
     // Add to container
