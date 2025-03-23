@@ -86,7 +86,7 @@
         background-color: rgba(0, 0, 0, 0.8);
         box-shadow: 0px -8px 16px black;
 
-        border-radius: 0.5rem;
+        border-radius: 0.1rem 0.1rem 0.5rem 0.5rem;
         backdrop-filter: blur(1px);
         bottom: 0;
         right: 0;
@@ -135,7 +135,7 @@
       right: 2px;
       z-index: 10;
       padding: 0.25rem;
-      
+
       &.read {
         .all-chapters {
           padding: 0.25rem 0.5rem;

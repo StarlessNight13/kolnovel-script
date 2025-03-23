@@ -1,11 +1,5 @@
 import { SITE_CONFIGS } from "@/config";
-import {
-  Book,
-  BookOpenCheck,
-  Calendar,
-  createElement,
-  EyeClosed,
-} from "lucide";
+import { BookOpen, createElement, Trash } from "lucide";
 import { Chapter, db, Novels } from "../db";
 import { Create } from "./creat-element";
 
@@ -156,6 +150,7 @@ export class NovelComponent {
       href: unFinishedChapter?.link ?? SITE_CONFIGS.novelPath + this.novel.uri,
       className: "endless-button",
       textContent: unFinishedChapter ? "أكمل القراءة" : "ابدأ القراءة",
+      children: [createElement(BookOpen)],
     }));
 
     // Change novel status Select element
@@ -184,12 +179,15 @@ export class NovelComponent {
     cardFooter.appendChild(novelStatusSelect.wrapper);
 
     // Delete novel button
-    const deleteButton = document.createElement("button");
-    deleteButton.className = "endless-button";
-    deleteButton.setAttribute("data-variant", "destructive");
-    deleteButton.textContent = "أحذف الرواية";
-    deleteButton.addEventListener("click", () => this.deleteNovel());
-    cardFooter.appendChild(deleteButton);
+    cardFooter.appendChild(Create.button({
+      className: "endless-button",
+      textContent: "أحذف الرواية",
+      attributes: {
+        "data-variant": "destructive",
+      },
+      children: [createElement(Trash)],
+      clickFunc: () => this.deleteNovel(),
+    }));
 
     // Assemble the card
     this.novelCard.appendChild(cardHeader);
