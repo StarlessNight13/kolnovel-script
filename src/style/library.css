@@ -1,3 +1,4 @@
+
 .libraryPage {
   /* General Layout */
   .novel-main-container {
@@ -13,6 +14,9 @@
 
   .mainholder {
     min-height: 100vh;
+    #content {
+      max-width: 100%;
+    }
   }
 
   .group-title {
@@ -79,6 +83,7 @@
       justify-content: center;
       gap: 0.5rem;
       .novel-title-link {
+        font-family: "Zain", sans-serif;
         display: flex;
         align-items: center;
         text-align: center;
@@ -86,7 +91,7 @@
         background-color: rgba(0, 0, 0, 0.8);
         box-shadow: 0px -8px 16px black;
 
-        border-radius: 0 0 0.5rem 0.5rem; 
+        border-radius: 0 0 0.5rem 0.5rem;
         backdrop-filter: blur(1px);
         bottom: 0;
         right: 0;
@@ -174,9 +179,12 @@
     border-bottom: 1px solid var(--foreground);
     padding-bottom: 1rem;
     .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      .settings-header-title {
+        font-family: "Zain", sans-serif;
+        font-weight: 800;
+        font-size: 2rem;
+        margin-right: 2rem;
+      }
     }
 
     .settings-content {
