@@ -2,8 +2,13 @@
   &.removeElements {
     #Bottum_Down,
     div.announ,
-    article > div.bixbox.episodedl > div.bixbox,
     div.socialts {
+      display: none !important;
+    }
+  }
+
+  &.disableComments {
+    article > div.bixbox.episodedl > div.bixbox {
       display: none !important;
     }
   }

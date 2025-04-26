@@ -1,7 +1,7 @@
 import { Create } from "@/components/creat-element";
 import { NotificationManager } from "@/components/Notification";
 import { db, Novels } from "@/db";
-import { createElement, RefreshCcw } from "lucide";
+import { createElement, MessageCircleOff, RefreshCcw } from "lucide";
 import { NovelComponent } from "@/components/novelCard";
 import { api } from "@/lib/API";
 
@@ -149,6 +149,10 @@ export class LibraryManager {
                                 }),
                             ],
                         }),
+                        Create.div({
+                            className: "settings-item",
+                            children: [this.createCommentDisabler()],
+                        }),
                     ],
                 }),
                 Create.div({
@@ -157,6 +161,18 @@ export class LibraryManager {
             ],
         });
     }
+
+    private createCommentDisabler(): HTMLDivElement {
+        const { container: toggleContainer, input: toggleInput } = Create.toggle("disableComments", "Disable Comments", MessageCircleOff);
+
+        toggleInput.checked = document.body.classList.contains("disableComments");;
+
+        toggleInput.addEventListener("change", () => {
+            document.body.classList.toggle("disableComments", toggleInput.checked);
+        });
+        return toggleContainer;
+    }
+
 
     /**
      * Updates novels with new chapter information

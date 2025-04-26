@@ -231,7 +231,7 @@ export const Create = {
   /**
    * Creates a toggle control
    */
-  toggle(id = "toggle", label = "Toggle"): {
+  toggle(id = "toggle", label = "Toggle", icon = Bot): {
     container: HTMLDivElement;
     input: HTMLInputElement;
     label: HTMLLabelElement;
@@ -255,7 +255,7 @@ export const Create = {
     // Add Bot icon to label
 
     lableElement.appendChild(
-      createElement(Bot)
+      createElement(icon)
     );
 
     // Assemble the toggle
