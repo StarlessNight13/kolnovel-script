@@ -1,8 +1,8 @@
 import { Create } from "@/components/creat-element";
 import { NotificationManager } from "@/components/Notification";
-import { Chapter, Chapters, db } from "@/db";
+import { db } from "@/db";
 import { api, Novel as NovelAPI } from "@/lib/API";
-import { Bomb, Book, createElement, Eye, EyeClosed, EyeOff, Minus, Plus } from "lucide";
+import { Book, createElement, Minus, Plus } from "lucide";
 
 // Type definitions
 interface NovelData {
@@ -87,17 +87,11 @@ export class NovelPageManager {
   private buttonContainer: HTMLDivElement | null = null;
   private infoContent: HTMLDivElement | null = null;
   private novelData: NovelAPI | null = null;
-  private chapterList: Chapters[] = [];
-  private unReadChapters: number = 0;
 
   constructor() {
     this.init()
       .then(() =>
         this.initChapterList()
-          .then(
-            () =>
-              this.setupChapters()
-          )
       );
   }
 
@@ -107,36 +101,6 @@ export class NovelPageManager {
   private async initChapterList(): Promise<void> {
     const novelId = this.novelData?.id;
     if (!novelId) return;
-    const chapterElements = document.querySelectorAll<HTMLLIElement>(
-      this.selectors.novelChapters
-    );
-
-    this.chapterList = await Promise.all(Array.from(chapterElements).map(async (element) => {
-      const anchorElement = element.querySelector("a") as HTMLAnchorElement;
-      const chapterId = Number(element.getAttribute("data-id"));
-
-      const savedChapter = await db.chapters.where({ id: chapterId, novelId }).first();
-      if (savedChapter) {
-        return savedChapter
-      } else {
-        await db.chapters.add({
-          id: chapterId,
-          link: anchorElement.getAttribute("href") ?? "404",
-          title: element.textContent?.trim() ?? "unknown",
-          novelId,
-          readingCompletion: 0,
-          lastRead: new Date(),
-        });
-        return {
-          id: chapterId,
-          link: anchorElement.getAttribute("href") ?? "404",
-          title: element.textContent?.trim() ?? "unknown",
-          novelId,
-          readingCompletion: 0,
-          lastRead: new Date(),
-        };
-      }
-    }));
   }
 
   /**
@@ -233,9 +197,6 @@ export class NovelPageManager {
     const novelData = this.extractNovelDetails();
     this.handleNovelAction(novelData, action);
 
-    if (this.novelData?.id) {
-      this.addChaptersToDB(this.chapterList, this.novelData.id);
-    }
   }
 
   /**
@@ -244,7 +205,7 @@ export class NovelPageManager {
   private extractNovelDetails(): NovelData {
     const name = this.getElementText(this.selectors.novelTitle) ?? "Unknown";
     const cover = this.getElementAttribute(this.selectors.novelCover, "src") ?? "#";
-    const chaptersCount = this.chapterList.length;
+    const chaptersCount = this.novelData?.count ?? 0;
     const slug = this.novelData?.slug ?? window.location.pathname.split("/")[2];
 
     return {
@@ -275,7 +236,7 @@ export class NovelPageManager {
       .where({ novelId: this.novelData.id })
       .toArray();
 
-    const hasNewChapters = this.chapterList.length > indexedChapters.length;
+    const hasNewChapters = this.novelData?.count > indexedChapters.length;
 
     NotificationManager.show({
       message: hasNewChapters
@@ -284,183 +245,6 @@ export class NovelPageManager {
       variant: "success",
     });
 
-    if (hasNewChapters && this.novelData.id) {
-      this.addChaptersToDB(this.chapterList, this.novelData.id);
-    }
-  }
-
-  /**
-   * Add chapters to database
-   */
-  private async addChaptersToDB(chapters: Chapters[], novelId: number): Promise<void> {
-    const now = new Date();
-
-    // Get chapters that don't exist in the database yet
-    const existingChapterIds = new Set(
-      (await db.chapters.where({ novelId }).toArray()).map(c => c.id)
-    );
-
-    const chaptersToAdd = chapters.filter(chapter => !existingChapterIds.has(chapter.id));
-
-    // Add new chapters to database
-    if (chaptersToAdd.length > 0) {
-      await db.chapters.bulkAdd(
-        chaptersToAdd.map(chapter => ({
-          id: chapter.id,
-          link: chapter.link,
-          novelId: novelId,
-          title: chapter.title,
-          readingCompletion: 0,
-          lastRead: now,
-        }))
-      );
-    }
-
-    document.querySelector("#update-chapters-btn")?.remove();
-  }
-
-  /**
-   * Setup chapter UI elements with reading status
-   */
-  private async setupChapters(): Promise<void> {
-    if (!this.novelData?.id) return;
-    // Check reading status for each chapter
-    const chaptersReadStatus = await Promise.all(
-      this.chapterList.map(async (chapter) => {
-        return chapter.readingCompletion < 100;
-      })
-    );
-
-    this.unReadChapters = chaptersReadStatus.filter(Boolean).length;
-
-    NotificationManager.show({
-      message: `عدد الفصول الغير مقروءة: ${this.unReadChapters}`,
-      variant: "success",
-    });
-
-    // Add action buttons to each chapter
-    const chapterElements = Array.from(
-      document.querySelectorAll<HTMLLIElement>(this.selectors.novelChapters)
-    );
-
-    chapterElements.forEach(async (element) => {
-      const chapterId = element.getAttribute("data-id");
-      if (!chapterId) return;
-      const chapterIndex = this.chapterList.findIndex(c => c.id === Number(chapterId))
-      const chapter = this.chapterList[chapterIndex];
-      if (!chapter) return;
-      const read = chapter?.readingCompletion === 100;
-
-      const actionBtn = this.createChapterActionButton(chapter, read, chapterIndex);
-      element.appendChild(actionBtn);
-    });
-  }
-
-  /**
-   * Create dropdown action button for chapters
-   */
-  private createChapterActionButton(chapter: Chapter & { id: number }, read: boolean, index: number): HTMLElement {
-    if (read) {
-      return Create.dropDownMenu({
-        icon: createElement(EyeOff),
-        label: "⋯",
-        iconOnly: true,
-        options: [{
-          value: "asUnread",
-          text: "غير مقروء",
-          icon: createElement(EyeClosed),
-          clickFunc: () => this.updateChapter({ ...chapter, readingCompletion: 0 }).then(() => {
-            NotificationManager.show({
-              message: "تم تحديث حالة القراءة",
-              variant: "success",
-            });
-          }),
-        },
-        {
-          value: "prevAsUnread",
-          text: "لم اقرا ما سبق",
-          icon: createElement(Bomb),
-          clickFunc: () => {
-            this.markPreviousChaptersAsUnread(index);
-            NotificationManager.show({
-              message: "تم تحديث حالة القراءة",
-              variant: "success",
-            });
-          },
-        }
-        ],
-      });
-    }
-    return Create.dropDownMenu({
-      icon: createElement(Eye),
-      label: "⋯",
-      iconOnly: true,
-      options: [{
-        value: "asRead",
-        text: "مقروء",
-        icon: createElement(Eye),
-        clickFunc: () => this.updateChapter({ ...chapter, readingCompletion: 100 }).then(() => {
-          NotificationManager.show({
-            message: "تم تحديث حالة القراءة",
-            variant: "success",
-          });
-        }),
-      },
-      {
-        value: "prevAsRead",
-        text: "قرأت ما سبق",
-        icon: Create.element("span", {
-          innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M12 18c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /><path d="M19 16v6" /><path d="M22 19l-3 3l-3 -3" /></svg>`,
-        }),
-        clickFunc: () => {
-          this.markPreviousChaptersAsRead(index);
-          NotificationManager.show({
-            message: "تم تحديث حالة القراءة",
-            variant: "success",
-          });
-        },
-      }
-      ],
-    });
-  }
-
-
-  private async markPreviousChaptersAsUnread(index: number): Promise<void> {
-    const chapters = this.chapterList;
-    if (!chapters) return;
-    const chapter = chapters[index];
-    if (!chapter) return;
-
-    for (let i = index; i < chapters.length; i++) {
-      const prevChapter = chapters[i];
-      if (!prevChapter) return;
-      await this.updateChapter({ ...prevChapter, readingCompletion: 0, lastRead: new Date() });
-    }
-
-  }
-
-  private async markPreviousChaptersAsRead(index: number): Promise<void> {
-    const chapters = this.chapterList;
-    if (!chapters) return;
-    const chapter = chapters[index];
-    if (!chapter) return;
-
-    for (let i = index; i > 0; i++) {
-      const prevChapter = chapters[i];
-      if (!prevChapter) return;
-      await this.updateChapter({ ...prevChapter, readingCompletion: 100, lastRead: new Date() });
-    }
-
-  }
-
-  /**
-   * Update chapter reading status in database
-   */
-  private async updateChapter(chapter: Chapter & { id: number }): Promise<void> {
-    await db.chapters.update(chapter.id, {
-      readingCompletion: chapter.readingCompletion,
-      lastRead: chapter.lastRead,
-    });
   }
 
   /**

@@ -70,6 +70,9 @@ export class NovelComponent {
     const unFinishedChapter = novelChapters.find(
       (chapter) => chapter.readingCompletion < 100
     );
+    const finshedCurrentChapters = novelChapters.filter(chapter => chapter.readingCompletion === 100).length === this.novel.chaptersCount;
+
+
 
 
     // Image container
@@ -149,7 +152,7 @@ export class NovelComponent {
     cardFooter.appendChild(Create.a({
       href: unFinishedChapter?.link ?? SITE_CONFIGS.novelPath + this.novel.uri,
       className: "endless-button",
-      textContent: unFinishedChapter ? "أكمل القراءة" : "ابدأ القراءة",
+      textContent: unFinishedChapter ? "أكمل القراءة" : finshedCurrentChapters ? this.novel.name : "ابدأ القراءة",
       children: [createElement(BookOpen)],
     }));
 

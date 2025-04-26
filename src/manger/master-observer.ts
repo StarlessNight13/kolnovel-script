@@ -1,4 +1,4 @@
-import { Bold, Book, createElement, Italic } from "lucide";
+import { Bold, Book, createElement, GalleryVertical, Italic, MessageCircleOff } from "lucide";
 import { Create } from "../components/creat-element";
 import { NotificationManager } from "../components/Notification";
 import { SITE_CONFIGS } from "../config";
@@ -95,7 +95,10 @@ export class MasterObserver {
    * Create and inject settings UI
    */
   private createSettingsUI(): void {
-    const { container: toggleContainer, input: toggleInput } = Create.toggle();
+    const { container: toggleContainer, input: toggleInput } = Create.toggle("autoLoader", "Auto Loader", GalleryVertical);
+    const { container: commentToggleContainer, input: commentToggleInput } = Create.toggle("disableComments", "Disable Comments", MessageCircleOff);
+
+
 
     toggleInput.checked = this.settings.autoLoader;
     toggleInput.addEventListener("change", () => {
@@ -104,6 +107,13 @@ export class MasterObserver {
         "autoLoaderState",
         this.settings.autoLoader.toString()
       );
+    });
+
+
+    commentToggleInput.checked = this.settings.autoLoader;
+
+    commentToggleInput.addEventListener("change", () => {
+      document.body.classList.toggle("disableComments", toggleInput.checked);
     });
 
     const customContainer = Create.div({
@@ -151,6 +161,7 @@ export class MasterObserver {
     });
     customContainer.appendChild(styleContainer);
     customContainer.appendChild(toggleContainer);
+    customContainer.appendChild(commentToggleContainer);
     document.querySelector("div.main-option")?.appendChild(customContainer);
   }
 
@@ -537,6 +548,14 @@ export class MasterObserver {
             disabled: chapterUrl ? "false" : "true",
           },
         }),
+        (() => {
+          const { container: toggleContainer, input: toggleInput } = Create.toggle("autoLoader", "Auto Loader", GalleryVertical);
+          toggleInput.checked = document.body.classList.contains("disableComments");;
+          toggleInput.addEventListener("change", () => {
+            document.body.classList.toggle("disableComments", toggleInput.checked);
+          });
+          return toggleContainer;
+        })(),
         // Settings button
         Create.button({
           textContent: "Settings",
@@ -546,6 +565,9 @@ export class MasterObserver {
       ],
     });
   }
+
+
+
 
   /**
    * Setup style synchronization between source and new elements

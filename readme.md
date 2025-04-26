@@ -1,56 +1,31 @@
-```js
-//  analyze and extract select options
-function analyzeAndExtractSelectOptions(selectElement, searchValue) {
-  // Array to store each option's value and text.
-  const optionsData = [];
+# kolnovel UserScript
 
-  // Initialize foundIndex as null (indicating no search performed).
-  let foundIndex = null;
+this is a userscript for the kolnovel website
 
-  // Get total number of options.
-  const totalOptions = selectElement.options.length;
+## Features
 
-  // Iterate through each option.
-  for (let i = 0; i < totalOptions; i++) {
-    const option = selectElement.options[i];
+- Auto-load chapters
+- Auto-update novels
+- Disable comments
+- save novels to into a library to read later and check out the newest chapters
 
-    // Save option data.
-    optionsData.push({
-      value: option.value,
-      text: option.text,
-    });
+## Installation
 
-    // If searchValue is provided and match hasn't been found yet.
-    if (typeof searchValue !== "undefined" && foundIndex === null) {
-      if (option.value === searchValue) {
-        foundIndex = i;
-      }
-    }
-  }
+### Userscript
 
-  // If searchValue was provided but no match was found, set foundIndex to -1.
-  if (typeof searchValue !== "undefined" && foundIndex === null) {
-    foundIndex = -1;
-  }
+1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension.
+2. Click on the "Install" button on the [userscript](https://github.com/StarlessNight13/kolnovel-script/raw/main/kolnovel.user.js) page.
+3. Click on the "Install" button on the Tampermonkey extension.
 
-  return {
-    optionsData,
-    totalOptions,
-    foundIndex,
-  };
-}
+## Usage
 
-//  get element HTML from server
-await fetch(
-  "../wp-content/themes/lightnovel_1.1.5_current/template-parts/single/list_1.php",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      seri: 217137,
-    }),
-  }
-).then((e) => e.text());
-```
+1. Open the kolnovel website.
+2. Click on the "Settings" button in the top right corner.
+3. Toggle the "Auto-loader" switch to enable auto-loading.
+4. Toggle the "Disable Comments" switch to disable comments.
+5. Click on the "Sync" button to update novels.
+
+## License
+
+This project is licensed under the MIT License.  
+Copyright (c) 2023 StarlessNight13
